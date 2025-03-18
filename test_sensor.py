@@ -5,7 +5,7 @@ import time
 from datetime import datetime
 
 # Configuration
-API_KEY = "your-api-key"  # Replace with your actual API key from Secrets
+API_KEY = os.environ.get("IOT_API_KEY")  # Get API key from environment
 BASE_URL = "http://0.0.0.0:5000"
 
 def simulate_sensor(sensor_id, sensor_type):
