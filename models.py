@@ -209,6 +209,19 @@ class SensorReading(db.Model):
     signal_strength = db.Column(db.Float)
 
 
+class FarmResource(db.Model):
+    """Farm resources like water, fertilizer, seeds etc."""
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    resource_type = db.Column(db.String(50), nullable=False)  # water, fertilizer, seeds
+    current_amount = db.Column(db.Float, nullable=False)
+    unit = db.Column(db.String(20), nullable=False)  # liters, kg, packets
+    last_update = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationship with user
+    user = db.relationship('User', backref=db.backref('farm_resources', lazy=True))
+
+
 class CropCalendar(db.Model):
     """Calendar for crop planting and harvesting based on region"""
     id = db.Column(db.Integer, primary_key=True)

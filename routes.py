@@ -818,6 +818,62 @@ def get_sensor_readings(sensor_id):
     })
 
 
+@app.route('/api/farm-resources', methods=['GET'])
+@login_required
+def get_farm_resources():
+    """Get all farm resources for the current user"""
+    resources = FarmResource.query.filter_by(user_id=current_user.id).all()
+    return jsonify({
+        'resources': [{
+            'id': resource.id,
+            'type': resource.resource_type,
+            'amount': resource.current_amount,
+            'unit': resource.unit,
+            'last_update': resource.last_update.isoformat()
+        } for resource in resources]
+    })
+
+@app.route('/api/farm-resources', methods=['POST'])
+@login_required
+def add_farm_resource():
+    """Add a new farm resource"""
+    resource_type = request.json.get('type')
+    amount = request.json.get('amount')
+    unit = request.json.get('unit')
+    
+    if not all([resource_type, amount, unit]):
+        return jsonify({'error': 'Missing required fields'}), 400
+    
+    resource = FarmResource(
+        user_id=current_user.id,
+        resource_type=resource_type,
+        current_amount=float(amount),
+        unit=unit
+    )
+    
+    db.session.add(resource)
+    db.session.commit()
+    
+    return jsonify({'success': True})
+
+@app.route('/api/farm-resources/<int:resource_id>', methods=['PUT'])
+@login_required
+def update_farm_resource(resource_id):
+    """Update farm resource amount"""
+    resource = FarmResource.query.get_or_404(resource_id)
+    if resource.user_id != current_user.id:
+        return jsonify({'error': 'Unauthorized'}), 403
+        
+    amount = request.json.get('amount')
+    if amount is None:
+        return jsonify({'error': 'Amount is required'}), 400
+        
+    resource.current_amount = float(amount)
+    resource.last_update = datetime.utcnow()
+    db.session.commit()
+    
+    return jsonify({'success': True})
+
 @app.route('/api/sensors/<int:sensor_id>/readings', methods=['POST'])
 def add_sensor_reading():
     """Add a new sensor reading (accessed by IoT devices)"""

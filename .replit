@@ -43,6 +43,15 @@ mode = "sequential"
 task = "shell.exec"
 args = "python test_sensor.py"
 
+[[workflows.workflow]]
+name = "Farm Simulator"
+author = 40625519
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python farm_simulator.py"
+
 [[ports]]
 localPort = 5000
 externalPort = 80
