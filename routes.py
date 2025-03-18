@@ -768,6 +768,90 @@ def get_extension_officers():
 @login_required
 def get_buyers():
     """Get a list of agricultural buyers/aggregators"""
+
+
+@app.route('/api/sensors', methods=['GET'])
+@login_required
+def get_sensors():
+    """Get all sensors for the current user"""
+    sensors = IoTSensor.query.filter_by(user_id=current_user.id).all()
+    return jsonify({
+        'sensors': [{
+            'id': sensor.id,
+            'name': sensor.name,
+            'type': sensor.sensor_type,
+            'location': sensor.location,
+            'is_active': sensor.is_active,
+            'last_reading': sensor.last_reading,
+            'last_reading_time': sensor.last_reading_time.isoformat() if sensor.last_reading_time else None
+        } for sensor in sensors]
+    })
+
+
+@app.route('/api/sensors/<int:sensor_id>/readings', methods=['GET'])
+@login_required
+def get_sensor_readings(sensor_id):
+    """Get readings for a specific sensor"""
+    sensor = IoTSensor.query.get_or_404(sensor_id)
+    if sensor.user_id != current_user.id:
+        return jsonify({'error': 'Unauthorized'}), 403
+        
+    # Get time range from query parameters
+    from_time = request.args.get('from')
+    to_time = request.args.get('to')
+    
+    query = SensorReading.query.filter_by(sensor_id=sensor_id)
+    if from_time:
+        query = query.filter(SensorReading.timestamp >= from_time)
+    if to_time:
+        query = query.filter(SensorReading.timestamp <= to_time)
+        
+    readings = query.order_by(SensorReading.timestamp.desc()).all()
+    
+    return jsonify({
+        'readings': [{
+            'value': reading.value,
+            'timestamp': reading.timestamp.isoformat(),
+            'battery_level': reading.battery_level,
+            'signal_strength': reading.signal_strength
+        } for reading in readings]
+    })
+
+
+@app.route('/api/sensors/<int:sensor_id>/readings', methods=['POST'])
+def add_sensor_reading():
+    """Add a new sensor reading (accessed by IoT devices)"""
+    # Verify API key / device authentication
+    api_key = request.headers.get('X-API-Key')
+    if not api_key or api_key != os.environ.get('IOT_API_KEY'):
+        return jsonify({'error': 'Unauthorized'}), 403
+        
+    sensor_id = request.json.get('sensor_id')
+    value = request.json.get('value')
+    battery_level = request.json.get('battery_level')
+    signal_strength = request.json.get('signal_strength')
+    
+    if not all([sensor_id, value]):
+        return jsonify({'error': 'Missing required fields'}), 400
+        
+    sensor = IoTSensor.query.get_or_404(sensor_id)
+    
+    # Update sensor's last reading
+    sensor.last_reading = value
+    sensor.last_reading_time = datetime.utcnow()
+    
+    # Create new reading
+    reading = SensorReading(
+        sensor_id=sensor_id,
+        value=value,
+        battery_level=battery_level,
+        signal_strength=signal_strength
+    )
+    
+    db.session.add(reading)
+    db.session.commit()
+    
+    return jsonify({'success': True})
     buyers = User.query.filter_by(is_buyer=True).all()
     
     buyers_list = []

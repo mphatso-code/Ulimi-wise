@@ -181,6 +181,34 @@ class SoilAnalysis(db.Model):
     user = db.relationship('User', backref=db.backref('soil_analyses', lazy=True))
 
 
+class IoTSensor(db.Model):
+    """IoT sensors deployed on farms"""
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    name = db.Column(db.String(100), nullable=False)
+    sensor_type = db.Column(db.String(50), nullable=False)  # soil_moisture, temperature, humidity, etc.
+    location = db.Column(db.String(200))
+    is_active = db.Column(db.Boolean, default=True)
+    last_reading = db.Column(db.Float)
+    last_reading_time = db.Column(db.DateTime)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationship with user
+    user = db.relationship('User', backref=db.backref('sensors', lazy=True))
+    # Relationship with readings
+    readings = db.relationship('SensorReading', backref='sensor', lazy=True)
+
+
+class SensorReading(db.Model):
+    """Readings from IoT sensors"""
+    id = db.Column(db.Integer, primary_key=True)
+    sensor_id = db.Column(db.Integer, db.ForeignKey('io_t_sensor.id'), nullable=False)
+    value = db.Column(db.Float, nullable=False)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    battery_level = db.Column(db.Float)
+    signal_strength = db.Column(db.Float)
+
+
 class CropCalendar(db.Model):
     """Calendar for crop planting and harvesting based on region"""
     id = db.Column(db.Integer, primary_key=True)
