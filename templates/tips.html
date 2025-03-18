@@ -1,0 +1,279 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>{{ 'Farming Tips' | translate(lang) }}</h1>
+        <div class="dropdown">
+            <button class="btn btn-outline-primary dropdown-toggle" type="button" id="filterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="bi bi-funnel"></i> {{ 'Filter' | translate(lang) }}
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="filterDropdown">
+                <li><h6 class="dropdown-header">{{ 'Categories' | translate(lang) }}</h6></li>
+                <li><a class="dropdown-item filter-item" href="#" data-filter="category" data-value="all">{{ 'All Categories' | translate(lang) }}</a></li>
+                {% for category in categories %}
+                <li><a class="dropdown-item filter-item" href="#" data-filter="category" data-value="{{ category }}">{{ category }}</a></li>
+                {% endfor %}
+                
+                <li><hr class="dropdown-divider"></li>
+                
+                <li><h6 class="dropdown-header">{{ 'Seasons' | translate(lang) }}</h6></li>
+                <li><a class="dropdown-item filter-item" href="#" data-filter="season" data-value="all">{{ 'All Seasons' | translate(lang) }}</a></li>
+                {% for season in seasons %}
+                <li><a class="dropdown-item filter-item" href="#" data-filter="season" data-value="{{ season }}">{{ season | capitalize }}</a></li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+    <!-- Search Box -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                <input type="text" class="form-control" id="searchTips" placeholder="{{ 'Search farming tips...' | translate(lang) }}">
+                <button class="btn btn-primary" type="button" id="searchButton">
+                    {{ 'Search' | translate(lang) }}
+                </button>
+            </div>
+            <div class="mt-2 d-flex align-items-center">
+                <span class="me-2">{{ 'Active filters:' | translate(lang) }}</span>
+                <div id="activeFilters">
+                    <span class="badge bg-secondary me-2" id="categoryFilter">{{ 'All Categories' | translate(lang) }}</span>
+                    <span class="badge bg-secondary me-2" id="seasonFilter">{{ 'All Seasons' | translate(lang) }}</span>
+                </div>
+                <button class="btn btn-sm btn-outline-secondary ms-auto" id="clearFilters">
+                    <i class="bi bi-x-circle"></i> {{ 'Clear Filters' | translate(lang) }}
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- No Results Message -->
+    <div id="noResults" class="alert alert-info" style="display: none;">
+        <i class="bi bi-info-circle-fill"></i> {{ 'No farming tips match your search criteria.' | translate(lang) }}
+    </div>
+
+    <!-- Tips Grid -->
+    <div class="row g-4 mb-5" id="tipsContainer">
+        {% if tips %}
+            {% for tip in tips %}
+            <div class="col-lg-4 col-md-6 mb-4 tip-item" 
+                 data-category="{{ tip.category }}" 
+                 data-season="{{ tip.season or 'all' }}">
+                <div class="card h-100 shadow-sm tip-card">
+                    <div class="card-body">
+                        <span class="badge bg-success tip-category-badge">{{ tip.category }}</span>
+                        <h5 class="card-title">{{ tip.title }}</h5>
+                        <p class="card-text">{{ tip.content|truncate(150) }}</p>
+                        <button class="btn btn-sm btn-outline-primary mt-2 view-tip-btn" data-bs-toggle="modal" data-bs-target="#tipModal" 
+                                data-tip-title="{{ tip.title }}" 
+                                data-tip-content="{{ tip.content }}"
+                                data-tip-category="{{ tip.category }}"
+                                data-tip-season="{{ tip.season or '' }}"
+                                data-tip-region="{{ tip.region or '' }}"
+                                data-tip-date="{{ tip.created_at.strftime('%Y-%m-%d') }}">
+                            {{ 'Read More' | translate(lang) }}
+                        </button>
+                    </div>
+                    <div class="card-footer bg-transparent d-flex justify-content-between align-items-center">
+                        <small class="text-muted">{{ tip.created_at.strftime('%Y-%m-%d') }}</small>
+                        {% if tip.season %}
+                        <span class="badge bg-info">{{ tip.season }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-12">
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle-fill"></i> {{ 'No farming tips available yet.' | translate(lang) }}
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Tip Detail Modal -->
+    <div class="modal fade" id="tipModal" tabindex="-1" aria-labelledby="tipModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="tipModalLabel"></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3 d-flex justify-content-between">
+                        <span id="tipCategory" class="badge bg-success"></span>
+                        <span id="tipDate" class="text-muted"></span>
+                    </div>
+                    <div id="tipContent" class="mb-3"></div>
+                    <div class="row mt-4 tip-meta">
+                        <div class="col-md-6">
+                            <strong>{{ 'Season' | translate(lang) }}:</strong> <span id="tipSeason"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>{{ 'Region' | translate(lang) }}:</strong> <span id="tipRegion"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'Close' | translate(lang) }}</button>
+                    <button type="button" class="btn btn-primary share-tip-btn">
+                        <i class="bi bi-share"></i> {{ 'Share' | translate(lang) }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Handle filter clicks
+        const filterItems = document.querySelectorAll('.filter-item');
+        filterItems.forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                const filterType = this.dataset.filter;
+                const filterValue = this.dataset.value;
+                
+                // Update active filter badge
+                if (filterType === 'category') {
+                    document.getElementById('categoryFilter').textContent = filterValue === 'all' ? 
+                        '{{ "All Categories" | translate(lang) }}' : filterValue;
+                } else if (filterType === 'season') {
+                    document.getElementById('seasonFilter').textContent = filterValue === 'all' ? 
+                        '{{ "All Seasons" | translate(lang) }}' : filterValue;
+                }
+                
+                // Apply filters
+                applyFilters();
+            });
+        });
+        
+        // Handle search
+        const searchButton = document.getElementById('searchButton');
+        const searchInput = document.getElementById('searchTips');
+        
+        searchButton.addEventListener('click', function() {
+            applyFilters();
+        });
+        
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                applyFilters();
+            }
+        });
+        
+        // Clear filters
+        document.getElementById('clearFilters').addEventListener('click', function() {
+            document.getElementById('categoryFilter').textContent = '{{ "All Categories" | translate(lang) }}';
+            document.getElementById('seasonFilter').textContent = '{{ "All Seasons" | translate(lang) }}';
+            document.getElementById('searchTips').value = '';
+            applyFilters();
+        });
+        
+        // View tip details
+        const viewTipButtons = document.querySelectorAll('.view-tip-btn');
+        viewTipButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const title = this.dataset.tipTitle;
+                const content = this.dataset.tipContent;
+                const category = this.dataset.tipCategory;
+                const season = this.dataset.tipSeason;
+                const region = this.dataset.tipRegion;
+                const date = this.dataset.tipDate;
+                
+                document.getElementById('tipModalLabel').textContent = title;
+                document.getElementById('tipContent').textContent = content;
+                document.getElementById('tipCategory').textContent = category;
+                document.getElementById('tipDate').textContent = date;
+                document.getElementById('tipSeason').textContent = season || '{{ "Not specified" | translate(lang) }}';
+                document.getElementById('tipRegion').textContent = region || '{{ "Not specified" | translate(lang) }}';
+            });
+        });
+        
+        // Share tip functionality
+        document.querySelector('.share-tip-btn').addEventListener('click', function() {
+            const tipTitle = document.getElementById('tipModalLabel').textContent;
+            const tipContent = document.getElementById('tipContent').textContent.substring(0, 100) + '...';
+            
+            // Use Web Share API if available
+            if (navigator.share) {
+                navigator.share({
+                    title: tipTitle,
+                    text: tipContent,
+                    url: window.location.href
+                })
+                .catch(err => {
+                    console.error('Error sharing:', err);
+                });
+            } else {
+                // Fallback - copy URL to clipboard
+                const textarea = document.createElement('textarea');
+                textarea.value = window.location.href;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                
+                showNotification('{{ "Link copied to clipboard" | translate(lang) }}', 'success');
+            }
+        });
+        
+        // Function to apply filters
+        function applyFilters() {
+            const categoryFilter = document.getElementById('categoryFilter').textContent;
+            const seasonFilter = document.getElementById('seasonFilter').textContent;
+            const searchText = document.getElementById('searchTips').value.toLowerCase();
+            
+            const tipItems = document.querySelectorAll('.tip-item');
+            let visibleCount = 0;
+            
+            tipItems.forEach(item => {
+                const category = item.dataset.category;
+                const season = item.dataset.season;
+                const title = item.querySelector('.card-title').textContent.toLowerCase();
+                const content = item.querySelector('.card-text').textContent.toLowerCase();
+                
+                let showItem = true;
+                
+                // Apply category filter
+                if (categoryFilter !== '{{ "All Categories" | translate(lang) }}' && category !== categoryFilter) {
+                    showItem = false;
+                }
+                
+                // Apply season filter
+                if (seasonFilter !== '{{ "All Seasons" | translate(lang) }}' && 
+                    season !== seasonFilter.toLowerCase() && 
+                    season !== 'all') {
+                    showItem = false;
+                }
+                
+                // Apply search filter
+                if (searchText && !title.includes(searchText) && !content.includes(searchText)) {
+                    showItem = false;
+                }
+                
+                // Show or hide the item
+                if (showItem) {
+                    item.style.display = '';
+                    visibleCount++;
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+            
+            // Show no results message if needed
+            if (visibleCount === 0) {
+                document.getElementById('noResults').style.display = 'block';
+            } else {
+                document.getElementById('noResults').style.display = 'none';
+            }
+        }
+    });
+</script>
+{% endblock %}

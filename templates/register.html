@@ -1,0 +1,205 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-sm my-5">
+                <div class="card-header bg-primary text-white text-center py-3">
+                    <h4 class="mb-0">{{ 'Register for Ulimi Wise' | translate(lang) }}</h4>
+                </div>
+                <div class="card-body p-4">
+                    <form action="{{ url_for('register') }}" method="post">
+                        <div class="mb-3">
+                            <label for="username" class="form-label">{{ 'Username' | translate(lang) }} *</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-person"></i></span>
+                                <input type="text" class="form-control" id="username" name="username" required autofocus>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="email" class="form-label">{{ 'Email' | translate(lang) }} *</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                                <input type="email" class="form-control" id="email" name="email" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="password" class="form-label">{{ 'Password' | translate(lang) }} *</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-key"></i></span>
+                                <input type="password" class="form-control" id="password" name="password" required minlength="8">
+                                <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </div>
+                            <div class="form-text">{{ 'Password must be at least 8 characters long.' | translate(lang) }}</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="language" class="form-label">{{ 'Preferred Language' | translate(lang) }}</label>
+                            <select class="form-select" id="language" name="language">
+                                {% for code, name in languages.items() %}
+                                <option value="{{ code }}" {% if code == lang %}selected{% endif %}>{{ name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="location" class="form-label">{{ 'Location' | translate(lang) }}</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-geo-alt"></i></span>
+                                <input type="text" class="form-control" id="location" name="location" placeholder="{{ 'Enter your city or region' | translate(lang) }}">
+                                <button class="btn btn-outline-secondary" type="button" id="detectLocationBtn">
+                                    <i class="bi bi-compass"></i> {{ 'Detect' | translate(lang) }}
+                                </button>
+                            </div>
+                            <div class="form-text">{{ 'Your location helps us provide weather and farming tips specific to your area.' | translate(lang) }}</div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="farm_type" class="form-label">{{ 'Farm Type' | translate(lang) }}</label>
+                            <select class="form-select" id="farm_type" name="farm_type">
+                                <option value="">{{ 'Select your farm type' | translate(lang) }}</option>
+                                <option value="crops">{{ 'Crop Farming' | translate(lang) }}</option>
+                                <option value="livestock">{{ 'Livestock Farming' | translate(lang) }}</option>
+                                <option value="mixed">{{ 'Mixed Farming' | translate(lang) }}</option>
+                                <option value="poultry">{{ 'Poultry Farming' | translate(lang) }}</option>
+                                <option value="dairy">{{ 'Dairy Farming' | translate(lang) }}</option>
+                                <option value="fish">{{ 'Fish Farming' | translate(lang) }}</option>
+                                <option value="fruits">{{ 'Fruit Farming' | translate(lang) }}</option>
+                                <option value="vegetables">{{ 'Vegetable Farming' | translate(lang) }}</option>
+                                <option value="other">{{ 'Other' | translate(lang) }}</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-check mb-4">
+                            <input class="form-check-input" type="checkbox" id="termsCheck" required>
+                            <label class="form-check-label" for="termsCheck">
+                                {{ 'I agree to the' | translate(lang) }} <a href="#" data-bs-toggle="modal" data-bs-target="#termsModal">{{ 'Terms and Conditions' | translate(lang) }}</a>
+                            </label>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="bi bi-person-plus"></i> {{ 'Register' | translate(lang) }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                <div class="card-footer bg-light p-3">
+                    <div class="text-center">
+                        <p>{{ 'Already have an account?' | translate(lang) }} <a href="{{ url_for('login') }}">{{ 'Login here' | translate(lang) }}</a></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Terms and Conditions Modal -->
+<div class="modal fade" id="termsModal" tabindex="-1" aria-labelledby="termsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="termsModalLabel">{{ 'Terms and Conditions' | translate(lang) }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <h6>{{ 'Welcome to Ulimi Wise' | translate(lang) }}</h6>
+                <p>{{ 'By using our agricultural support platform, you agree to these terms and conditions.' | translate(lang) }}</p>
+                
+                <h6>{{ '1. User Accounts' | translate(lang) }}</h6>
+                <p>{{ 'You are responsible for maintaining the confidentiality of your account information and password.' | translate(lang) }}</p>
+                
+                <h6>{{ '2. Privacy Policy' | translate(lang) }}</h6>
+                <p>{{ 'We collect location data to provide weather-based agricultural recommendations. Your data is used solely to improve your farming experience.' | translate(lang) }}</p>
+                
+                <h6>{{ '3. Marketplace' | translate(lang) }}</h6>
+                <p>{{ 'Ulimi Wise facilitates connections between buyers and sellers but is not responsible for transactions between users. Users are responsible for complying with all applicable laws.' | translate(lang) }}</p>
+                
+                <h6>{{ '4. Agricultural Information' | translate(lang) }}</h6>
+                <p>{{ 'The farming tips, weather recommendations, and chatbot responses are provided for general information only and should not be relied upon as the sole basis for farming decisions.' | translate(lang) }}</p>
+                
+                <h6>{{ '5. Changes to Terms' | translate(lang) }}</h6>
+                <p>{{ 'Ulimi Wise reserves the right to modify these terms at any time. Continued use of the platform constitutes acceptance of the modified terms.' | translate(lang) }}</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">{{ 'I Understand' | translate(lang) }}</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Toggle password visibility
+        const togglePassword = document.getElementById('togglePassword');
+        const passwordInput = document.getElementById('password');
+        
+        togglePassword.addEventListener('click', function() {
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+            
+            // Toggle eye icon
+            togglePassword.querySelector('i').classList.toggle('bi-eye');
+            togglePassword.querySelector('i').classList.toggle('bi-eye-slash');
+        });
+        
+        // Location detection
+        const detectLocationBtn = document.getElementById('detectLocationBtn');
+        const locationInput = document.getElementById('location');
+        
+        detectLocationBtn.addEventListener('click', function() {
+            if (navigator.geolocation) {
+                detectLocationBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> {{ "Detecting" | translate(lang) }}';
+                detectLocationBtn.disabled = true;
+                
+                navigator.geolocation.getCurrentPosition(
+                    function(position) {
+                        // Get city name from coordinates using reverse geocoding
+                        const lat = position.coords.latitude;
+                        const lon = position.coords.longitude;
+                        
+                        // If we don't have an API key, just use coordinates
+                        if (!{{ config.get('OPENWEATHER_API_KEY', '') }}) {
+                            locationInput.value = `${lat.toFixed(2)}, ${lon.toFixed(2)}`;
+                            detectLocationBtn.innerHTML = '<i class="bi bi-compass"></i> {{ "Detect" | translate(lang) }}';
+                            detectLocationBtn.disabled = false;
+                            return;
+                        }
+                        
+                        fetch(`https://api.openweathermap.org/geo/1.0/reverse?lat=${lat}&lon=${lon}&limit=1&appid={{ config.get('OPENWEATHER_API_KEY', '') }}`)
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data && data.length > 0) {
+                                    locationInput.value = data[0].name + ', ' + data[0].country;
+                                } else {
+                                    locationInput.value = `${lat.toFixed(2)}, ${lon.toFixed(2)}`;
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error fetching location name:', error);
+                                locationInput.value = `${lat.toFixed(2)}, ${lon.toFixed(2)}`;
+                            })
+                            .finally(() => {
+                                detectLocationBtn.innerHTML = '<i class="bi bi-compass"></i> {{ "Detect" | translate(lang) }}';
+                                detectLocationBtn.disabled = false;
+                            });
+                    },
+                    function(error) {
+                        console.error('Error getting location:', error);
+                        showNotification('{{ "Unable to detect location. Please enter it manually." | translate(lang) }}', 'warning');
+                        detectLocationBtn.innerHTML = '<i class="bi bi-compass"></i> {{ "Detect" | translate(lang) }}';
+                        detectLocationBtn.disabled = false;
+                    }
+                );
+            } else {
+                showNotification('{{ "Geolocation is not supported by your browser." | translate(lang) }}', 'warning');
+            }
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>{{ 'Agricultural Assistant' | translate(lang) }}</h1>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="voiceResponseToggle" checked>
+                    <label class="form-check-label" for="voiceResponseToggle">{{ 'Voice Response' | translate(lang) }}</label>
+                </div>
+            </div>
+            
+            <!-- Chat Container -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div><i class="bi bi-robot me-2"></i> {{ 'Ulimi Assistant' | translate(lang) }}</div>
+                        <button class="btn btn-sm btn-outline-light" onclick="clearChat()">
+                            <i class="bi bi-trash"></i> {{ 'Clear Chat' | translate(lang) }}
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div id="chatMessages" class="chat-container p-3">
+                        <!-- Welcome Message -->
+                        <div class="chat-message bot-message">
+                            <div class="avatar"><i class="bi bi-robot"></i></div>
+                            <div class="message-content">
+                                <div class="message-text">
+                                    {{ 'Hello! I\'m your agricultural assistant. How can I help with your farming questions today?' | translate(lang) }}
+                                </div>
+                                <div class="message-time">{{ current_time }}</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Chat History -->
+                        {% if chat_history %}
+                            {% for chat in chat_history %}
+                                <!-- User Message -->
+                                <div class="chat-message user-message">
+                                    <div class="message-content">
+                                        <div class="message-text">{{ chat.user_message }}</div>
+                                        <div class="message-time">{{ chat.created_at.strftime('%H:%M') }}</div>
+                                    </div>
+                                    <div class="avatar"><i class="bi bi-person-circle"></i></div>
+                                </div>
+                                
+                                <!-- Bot Response -->
+                                <div class="chat-message bot-message">
+                                    <div class="avatar"><i class="bi bi-robot"></i></div>
+                                    <div class="message-content">
+                                        <div class="message-text">{{ chat.bot_response }}</div>
+                                        <div class="message-time">{{ chat.created_at.strftime('%H:%M') }}</div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-footer bg-light">
+                    <form id="chatForm" class="d-flex">
+                        <input type="text" id="messageInput" class="form-control me-2" 
+                               placeholder="{{ 'Type your message here...' | translate(lang) }}" required>
+                        <button type="button" id="voiceInputBtn" class="btn btn-outline-secondary me-2">
+                            <i class="bi bi-mic"></i> {{ 'Speak' | translate(lang) }}
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-send"></i> {{ 'Send' | translate(lang) }}
+                        </button>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Farming Topic Suggestions -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-lightbulb"></i> {{ 'Suggested Topics' | translate(lang) }}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-2">
+                        <div class="col-md-4">
+                            <button class="btn btn-outline-success w-100 topic-btn" data-topic="How do I grow maize?">
+                                {{ 'Growing Maize' | translate(lang) }}
+                            </button>
+                        </div>
+                        <div class="col-md-4">
+                            <button class="btn btn-outline-success w-100 topic-btn" data-topic="What are common pests for tomatoes?">
+                                {{ 'Tomato Pests' | translate(lang) }}
+                            </button>
+                        </div>
+                        <div class="col-md-4">
+                            <button class="btn btn-outline-success w-100 topic-btn" data-topic="Best time to plant rice">
+                                {{ 'Rice Planting' | translate(lang) }}
+                            </button>
+                        </div>
+                        <div class="col-md-4">
+                            <button class="btn btn-outline-success w-100 topic-btn" data-topic="How to improve soil fertility">
+                                {{ 'Soil Fertility' | translate(lang) }}
+                            </button>
+                        </div>
+                        <div class="col-md-4">
+                            <button class="btn btn-outline-success w-100 topic-btn" data-topic="Water conservation methods">
+                                {{ 'Water Conservation' | translate(lang) }}
+                            </button>
+                        </div>
+                        <div class="col-md-4">
+                            <button class="btn btn-outline-success w-100 topic-btn" data-topic="Livestock feeding recommendations">
+                                {{ 'Livestock Feeding' | translate(lang) }}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Usage Instructions -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-info-circle"></i> {{ 'How to Use the Assistant' | translate(lang) }}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6><i class="bi bi-chat-dots text-primary me-2"></i> {{ 'Text Chat' | translate(lang) }}</h6>
+                            <ul>
+                                <li>{{ 'Type your farming question in the message box' | translate(lang) }}</li>
+                                <li>{{ 'Press "Send" or hit Enter to submit' | translate(lang) }}</li>
+                                <li>{{ 'Receive a text response from the assistant' | translate(lang) }}</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6><i class="bi bi-mic-fill text-danger me-2"></i> {{ 'Voice Interaction' | translate(lang) }}</h6>
+                            <ul>
+                                <li>{{ 'Click the "Speak" button to start voice input' | translate(lang) }}</li>
+                                <li>{{ 'Speak your question clearly' | translate(lang) }}</li>
+                                <li>{{ 'Toggle "Voice Response" to hear answers read aloud' | translate(lang) }}</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="alert alert-info mt-3 mb-0">
+                        <i class="bi bi-lightbulb-fill me-2"></i>
+                        {{ 'Tip: Ask specific questions about crops, soil, weather, livestock, or markets for the best results.' | translate(lang) }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Chatbot JavaScript -->
+<script src="{{ url_for('static', filename='js/chatbot.js') }}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Handle topic suggestion buttons
+        const topicButtons = document.querySelectorAll('.topic-btn');
+        topicButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const topic = this.dataset.topic;
+                document.getElementById('messageInput').value = topic;
+                // Focus the input
+                document.getElementById('messageInput').focus();
+            });
+        });
+    });
+</script>
+{% endblock %}

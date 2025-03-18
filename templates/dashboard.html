@@ -1,0 +1,530 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+<!-- Add any additional CSS for dashboard -->
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>{{ 'Dashboard' | translate(lang) }}</h1>
+        <div class="d-flex">
+            <div class="dropdown me-2">
+                <button class="btn btn-outline-primary dropdown-toggle" type="button" id="dashboardActionsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-plus-circle"></i> {{ 'Actions' | translate(lang) }}
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="dashboardActionsDropdown">
+                    <li>
+                        <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#addProductModal">
+                            <i class="bi bi-bag-plus"></i> {{ 'Add Product' | translate(lang) }}
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="{{ url_for('chatbot_page') }}">
+                            <i class="bi bi-chat-dots"></i> {{ 'Ask Assistant' | translate(lang) }}
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="{{ url_for('profile') }}">
+                            <i class="bi bi-person-gear"></i> {{ 'Update Profile' | translate(lang) }}
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            <div class="btn-group">
+                <a href="{{ url_for('marketplace') }}" class="btn btn-outline-success">
+                    <i class="bi bi-shop"></i> {{ 'Marketplace' | translate(lang) }}
+                </a>
+                <a href="{{ url_for('tips') }}" class="btn btn-outline-warning">
+                    <i class="bi bi-lightbulb"></i> {{ 'Tips' | translate(lang) }}
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="card shadow-sm h-100 stats-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-2">{{ 'Your Location' | translate(lang) }}</h6>
+                            <h5>{{ current_user.location or 'Not set' }}</h5>
+                        </div>
+                        <div class="bg-light-subtle p-3 rounded-circle">
+                            <i class="bi bi-geo-alt text-primary fs-3"></i>
+                        </div>
+                    </div>
+                    <p class="card-text text-muted mt-3">
+                        <i class="bi bi-info-circle"></i> 
+                        {% if current_user.location %}
+                            {{ 'Your farm location is set.' | translate(lang) }}
+                        {% else %}
+                            {{ 'Update your location in profile.' | translate(lang) }}
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm h-100 stats-card weather">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-2">{{ 'Weather' | translate(lang) }}</h6>
+                            <h5>
+                                {% if weather and weather.temperature %}
+                                    {{ weather.temperature.current }}°C
+                                {% else %}
+                                    {{ 'Not available' | translate(lang) }}
+                                {% endif %}
+                            </h5>
+                        </div>
+                        <div class="bg-info-subtle p-3 rounded-circle">
+                            <i class="bi bi-cloud-sun text-info fs-3"></i>
+                        </div>
+                    </div>
+                    <p class="card-text text-muted mt-3">
+                        {% if weather and weather.conditions %}
+                            <i class="bi bi-info-circle"></i> {{ weather.conditions }}
+                        {% else %}
+                            <i class="bi bi-exclamation-circle"></i> {{ 'Update your location to see weather' | translate(lang) }}
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm h-100 stats-card marketplace">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-2">{{ 'Your Products' | translate(lang) }}</h6>
+                            <h5>{{ products|length }}</h5>
+                        </div>
+                        <div class="bg-warning-subtle p-3 rounded-circle">
+                            <i class="bi bi-box-seam text-warning fs-3"></i>
+                        </div>
+                    </div>
+                    <p class="card-text text-muted mt-3">
+                        <i class="bi bi-info-circle"></i> 
+                        {% if products %}
+                            {{ 'You have products in the marketplace.' | translate(lang) }}
+                        {% else %}
+                            {{ 'Add products to start selling.' | translate(lang) }}
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm h-100 stats-card tips">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-2">{{ 'Farm Type' | translate(lang) }}</h6>
+                            <h5>{{ current_user.farm_type or 'Not set' }}</h5>
+                        </div>
+                        <div class="bg-success-subtle p-3 rounded-circle">
+                            <i class="bi bi-tree text-success fs-3"></i>
+                        </div>
+                    </div>
+                    <p class="card-text text-muted mt-3">
+                        <i class="bi bi-info-circle"></i> 
+                        {% if current_user.farm_type %}
+                            {{ 'Your farm type is set.' | translate(lang) }}
+                        {% else %}
+                            {{ 'Update your farm type in profile.' | translate(lang) }}
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Weather Widget -->
+        <div class="col-md-6">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-cloud-sun"></i> {{ 'Weather & Recommendations' | translate(lang) }}
+                    </h5>
+                    <button id="refreshWeatherBtn" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-arrow-clockwise"></i> {{ 'Refresh' | translate(lang) }}
+                    </button>
+                </div>
+                <div class="card-body">
+                    {% if current_user.location %}
+                        <div id="weatherWidget">
+                            <div class="d-flex justify-content-center">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">{{ 'Loading...' | translate(lang) }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle-fill"></i> 
+                            {{ 'Please update your location in your profile to see weather information.' | translate(lang) }}
+                            <a href="{{ url_for('profile') }}" class="alert-link">{{ 'Update Profile' | translate(lang) }}</a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Farming Tips -->
+            <div class="card shadow-sm">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-lightbulb"></i> {{ 'Relevant Farming Tips' | translate(lang) }}
+                    </h5>
+                    <a href="{{ url_for('tips') }}" class="btn btn-sm btn-outline-primary">
+                        {{ 'View All' | translate(lang) }}
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if tips %}
+                        <div class="list-group">
+                            {% for tip in tips %}
+                            <div class="list-group-item list-group-item-action">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1">{{ tip.title }}</h6>
+                                    <small class="text-muted">{{ tip.created_at.strftime('%Y-%m-%d') }}</small>
+                                </div>
+                                <p class="mb-1">{{ tip.content|truncate(100) }}</p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small class="text-muted">{{ 'Category' | translate(lang) }}: {{ tip.category }}</small>
+                                    {% if tip.season %}
+                                    <span class="badge bg-info">{{ tip.season }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle-fill"></i> 
+                            {{ 'No relevant farming tips available yet. Please update your farm type in your profile.' | translate(lang) }}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Weather Alerts & Products -->
+        <div class="col-md-6">
+            <!-- Weather Alerts -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-exclamation-triangle"></i> {{ 'Weather Alerts' | translate(lang) }}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if alerts %}
+                        <div class="list-group">
+                            {% for alert in alerts %}
+                            <div class="list-group-item list-group-item-action">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1">{{ alert.alert_type }}</h6>
+                                    <small class="text-muted">{{ alert.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                                </div>
+                                <p class="mb-1">{{ alert.message }}</p>
+                                <small class="text-muted">{{ 'Location' | translate(lang) }}: {{ alert.location }}</small>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="alert alert-success">
+                            <i class="bi bi-check-circle-fill"></i> 
+                            {{ 'No weather alerts at this time.' | translate(lang) }}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Your Products -->
+            <div class="card shadow-sm">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-box-seam"></i> {{ 'Your Products' | translate(lang) }}
+                    </h5>
+                    <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#addProductModal">
+                        <i class="bi bi-plus-circle"></i> {{ 'Add Product' | translate(lang) }}
+                    </button>
+                </div>
+                <div class="card-body">
+                    {% if products %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>{{ 'Name' | translate(lang) }}</th>
+                                        <th>{{ 'Price' | translate(lang) }}</th>
+                                        <th>{{ 'Quantity' | translate(lang) }}</th>
+                                        <th>{{ 'Status' | translate(lang) }}</th>
+                                        <th>{{ 'Actions' | translate(lang) }}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for product in products %}
+                                    <tr>
+                                        <td>{{ product.name }}</td>
+                                        <td>{{ product.price }}</td>
+                                        <td>{{ product.quantity }} {{ product.unit }}</td>
+                                        <td>
+                                            {% if product.is_available %}
+                                            <span class="badge bg-success">{{ 'Available' | translate(lang) }}</span>
+                                            {% else %}
+                                            <span class="badge bg-danger">{{ 'Not Available' | translate(lang) }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-primary edit-product-btn" 
+                                                data-product-id="{{ product.id }}"
+                                                data-product="{{ product|tojson }}">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-danger delete-product-btn"
+                                                data-product-id="{{ product.id }}"
+                                                data-product-name="{{ product.name }}">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle-fill"></i> 
+                            {{ 'You have no products listed in the marketplace.' | translate(lang) }}
+                        </div>
+                        <div class="text-center mt-3">
+                            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addProductModal">
+                                <i class="bi bi-plus-circle"></i> {{ 'Add Your First Product' | translate(lang) }}
+                            </button>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Product Modal -->
+<div class="modal fade" id="addProductModal" tabindex="-1" aria-labelledby="addProductModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addProductModalLabel">{{ 'Add New Product' | translate(lang) }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="addProductForm" action="{{ url_for('add_product') }}" method="post">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="productName" class="form-label">{{ 'Product Name' | translate(lang) }} *</label>
+                        <input type="text" class="form-control" id="productName" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="productDescription" class="form-label">{{ 'Description' | translate(lang) }}</label>
+                        <textarea class="form-control" id="productDescription" name="description" rows="3"></textarea>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col">
+                            <label for="productPrice" class="form-label">{{ 'Price' | translate(lang) }} *</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" class="form-control" id="productPrice" name="price" step="0.01" min="0" required>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <label for="productQuantity" class="form-label">{{ 'Quantity' | translate(lang) }} *</label>
+                            <input type="number" class="form-control" id="productQuantity" name="quantity" step="0.01" min="0" required>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col">
+                            <label for="productUnit" class="form-label">{{ 'Unit' | translate(lang) }} *</label>
+                            <select class="form-select" id="productUnit" name="unit" required>
+                                <option value="">{{ 'Select a unit' | translate(lang) }}</option>
+                                <option value="kg">{{ 'Kilogram (kg)' | translate(lang) }}</option>
+                                <option value="g">{{ 'Gram (g)' | translate(lang) }}</option>
+                                <option value="lb">{{ 'Pound (lb)' | translate(lang) }}</option>
+                                <option value="ton">{{ 'Ton' | translate(lang) }}</option>
+                                <option value="l">{{ 'Liter (l)' | translate(lang) }}</option>
+                                <option value="ml">{{ 'Milliliter (ml)' | translate(lang) }}</option>
+                                <option value="piece">{{ 'Piece' | translate(lang) }}</option>
+                                <option value="dozen">{{ 'Dozen' | translate(lang) }}</option>
+                                <option value="box">{{ 'Box' | translate(lang) }}</option>
+                                <option value="sack">{{ 'Sack' | translate(lang) }}</option>
+                            </select>
+                        </div>
+                        <div class="col">
+                            <label for="productCategory" class="form-label">{{ 'Category' | translate(lang) }} *</label>
+                            <select class="form-select" id="productCategory" name="category" required>
+                                <option value="">{{ 'Select a category' | translate(lang) }}</option>
+                                <option value="vegetables">{{ 'Vegetables' | translate(lang) }}</option>
+                                <option value="fruits">{{ 'Fruits' | translate(lang) }}</option>
+                                <option value="grains">{{ 'Grains' | translate(lang) }}</option>
+                                <option value="meat">{{ 'Meat' | translate(lang) }}</option>
+                                <option value="dairy">{{ 'Dairy' | translate(lang) }}</option>
+                                <option value="poultry">{{ 'Poultry' | translate(lang) }}</option>
+                                <option value="seeds">{{ 'Seeds' | translate(lang) }}</option>
+                                <option value="fertilizer">{{ 'Fertilizer' | translate(lang) }}</option>
+                                <option value="tools">{{ 'Tools & Equipment' | translate(lang) }}</option>
+                                <option value="other">{{ 'Other' | translate(lang) }}</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'Cancel' | translate(lang) }}</button>
+                    <button type="submit" class="btn btn-primary">{{ 'Add Product' | translate(lang) }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Product Modal -->
+<div class="modal fade" id="editProductModal" tabindex="-1" aria-labelledby="editProductModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editProductModalLabel">{{ 'Edit Product' | translate(lang) }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ url_for('update_product', product_id=0) }}" method="post">
+                <div class="modal-body">
+                    <input type="hidden" id="editProductId" name="product_id">
+                    <div class="mb-3">
+                        <label for="editProductName" class="form-label">{{ 'Product Name' | translate(lang) }} *</label>
+                        <input type="text" class="form-control" id="editProductName" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editProductDescription" class="form-label">{{ 'Description' | translate(lang) }}</label>
+                        <textarea class="form-control" id="editProductDescription" name="description" rows="3"></textarea>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col">
+                            <label for="editProductPrice" class="form-label">{{ 'Price' | translate(lang) }} *</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" class="form-control" id="editProductPrice" name="price" step="0.01" min="0" required>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <label for="editProductQuantity" class="form-label">{{ 'Quantity' | translate(lang) }} *</label>
+                            <input type="number" class="form-control" id="editProductQuantity" name="quantity" step="0.01" min="0" required>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col">
+                            <label for="editProductUnit" class="form-label">{{ 'Unit' | translate(lang) }} *</label>
+                            <select class="form-select" id="editProductUnit" name="unit" required>
+                                <option value="">{{ 'Select a unit' | translate(lang) }}</option>
+                                <option value="kg">{{ 'Kilogram (kg)' | translate(lang) }}</option>
+                                <option value="g">{{ 'Gram (g)' | translate(lang) }}</option>
+                                <option value="lb">{{ 'Pound (lb)' | translate(lang) }}</option>
+                                <option value="ton">{{ 'Ton' | translate(lang) }}</option>
+                                <option value="l">{{ 'Liter (l)' | translate(lang) }}</option>
+                                <option value="ml">{{ 'Milliliter (ml)' | translate(lang) }}</option>
+                                <option value="piece">{{ 'Piece' | translate(lang) }}</option>
+                                <option value="dozen">{{ 'Dozen' | translate(lang) }}</option>
+                                <option value="box">{{ 'Box' | translate(lang) }}</option>
+                                <option value="sack">{{ 'Sack' | translate(lang) }}</option>
+                            </select>
+                        </div>
+                        <div class="col">
+                            <label for="editProductCategory" class="form-label">{{ 'Category' | translate(lang) }} *</label>
+                            <select class="form-select" id="editProductCategory" name="category" required>
+                                <option value="">{{ 'Select a category' | translate(lang) }}</option>
+                                <option value="vegetables">{{ 'Vegetables' | translate(lang) }}</option>
+                                <option value="fruits">{{ 'Fruits' | translate(lang) }}</option>
+                                <option value="grains">{{ 'Grains' | translate(lang) }}</option>
+                                <option value="meat">{{ 'Meat' | translate(lang) }}</option>
+                                <option value="dairy">{{ 'Dairy' | translate(lang) }}</option>
+                                <option value="poultry">{{ 'Poultry' | translate(lang) }}</option>
+                                <option value="seeds">{{ 'Seeds' | translate(lang) }}</option>
+                                <option value="fertilizer">{{ 'Fertilizer' | translate(lang) }}</option>
+                                <option value="tools">{{ 'Tools & Equipment' | translate(lang) }}</option>
+                                <option value="other">{{ 'Other' | translate(lang) }}</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="editProductAvailable" name="is_available" checked>
+                        <label class="form-check-label" for="editProductAvailable">
+                            {{ 'Product is available for sale' | translate(lang) }}
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'Cancel' | translate(lang) }}</button>
+                    <button type="submit" class="btn btn-primary">{{ 'Save Changes' | translate(lang) }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Product Modal -->
+<div class="modal fade" id="deleteProductModal" tabindex="-1" aria-labelledby="deleteProductModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteProductModalLabel">{{ 'Confirm Delete' | translate(lang) }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>{{ 'Are you sure you want to delete' | translate(lang) }} <strong id="productNameToDelete"></strong>?</p>
+                <p>{{ 'This action cannot be undone.' | translate(lang) }}</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'Cancel' | translate(lang) }}</button>
+                <form action="{{ url_for('delete_product', product_id=0) }}" method="post">
+                    <input type="hidden" id="deleteProductId" name="product_id">
+                    <button type="submit" class="btn btn-danger">{{ 'Delete' | translate(lang) }}</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<!-- Add marketplace and weather scripts -->
+<script src="{{ url_for('static', filename='js/marketplace.js') }}"></script>
+<script src="{{ url_for('static', filename='js/weather.js') }}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Load weather data
+        {% if current_user.location %}
+        loadWeatherData('{{ current_user.location }}');
+        {% endif %}
+        
+        // Fix form action URL for edit product
+        const editForm = document.querySelector('#editProductModal form');
+        if (editForm) {
+            editForm.addEventListener('submit', function() {
+                const productId = document.getElementById('editProductId').value;
+                this.action = '{{ url_for("update_product", product_id=0) }}'.replace('0', productId);
+            });
+        }
+        
+        // Fix form action URL for delete product
+        const deleteForm = document.querySelector('#deleteProductModal form');
+        if (deleteForm) {
+            deleteForm.addEventListener('submit', function() {
+                const productId = document.getElementById('deleteProductId').value;
+                this.action = '{{ url_for("delete_product", product_id=0) }}'.replace('0', productId);
+            });
+        }
+    });
+</script>
+{% endblock %}

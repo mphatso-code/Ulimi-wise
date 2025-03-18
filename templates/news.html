@@ -1,0 +1,311 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>{{ 'Agricultural News' | translate(lang) }}</h1>
+        <div class="btn-group" role="group" aria-label="News filters">
+            <button type="button" class="btn btn-outline-primary news-filter active" data-filter="all">
+                {{ 'All' | translate(lang) }}
+            </button>
+            <button type="button" class="btn btn-outline-primary news-filter" data-filter="article">
+                <i class="bi bi-file-text"></i> {{ 'Articles' | translate(lang) }}
+            </button>
+            <button type="button" class="btn btn-outline-primary news-filter" data-filter="video">
+                <i class="bi bi-camera-video"></i> {{ 'Videos' | translate(lang) }}
+            </button>
+            <button type="button" class="btn btn-outline-primary news-filter" data-filter="podcast">
+                <i class="bi bi-headphones"></i> {{ 'Podcasts' | translate(lang) }}
+            </button>
+        </div>
+    </div>
+
+    <!-- Search Box -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                <input type="text" class="form-control" id="searchNews" placeholder="{{ 'Search agricultural news...' | translate(lang) }}">
+                <button class="btn btn-primary" type="button" id="searchButton">
+                    {{ 'Search' | translate(lang) }}
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- No Results Message -->
+    <div id="noResults" class="alert alert-info" style="display: none;">
+        <i class="bi bi-info-circle-fill"></i> {{ 'No news articles match your search criteria.' | translate(lang) }}
+    </div>
+
+    <!-- News Grid -->
+    <div class="row g-4 mb-5" id="newsContainer">
+        {% if news %}
+            {% for article in news %}
+            <div class="col-lg-3 col-md-4 col-sm-6 mb-4 news-item" data-type="{{ article.media_type }}">
+                <div class="card h-100 shadow-sm news-card">
+                    <div class="card-body">
+                        <span class="badge news-media-badge 
+                            {% if article.media_type == 'article' %}bg-primary
+                            {% elif article.media_type == 'video' %}bg-danger
+                            {% elif article.media_type == 'podcast' %}bg-success
+                            {% endif %}">
+                            {% if article.media_type == 'article' %}
+                            <i class="bi bi-file-text"></i> {{ 'Article' | translate(lang) }}
+                            {% elif article.media_type == 'video' %}
+                            <i class="bi bi-camera-video"></i> {{ 'Video' | translate(lang) }}
+                            {% elif article.media_type == 'podcast' %}
+                            <i class="bi bi-headphones"></i> {{ 'Podcast' | translate(lang) }}
+                            {% endif %}
+                        </span>
+                        <h5 class="card-title">{{ article.title }}</h5>
+                        <p class="card-text">{{ article.content|truncate(100) }}</p>
+                        <div class="mt-3">
+                            <small class="text-muted">{{ 'Source' | translate(lang) }}: {{ article.source or 'Ulimi Wise' }}</small>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-transparent d-flex justify-content-between align-items-center">
+                        <small class="text-muted">{{ article.created_at.strftime('%Y-%m-%d') }}</small>
+                        <a href="{% if article.source_url %}{{ article.source_url }}{% else %}#{% endif %}" 
+                           class="btn btn-sm 
+                           {% if article.media_type == 'article' %}btn-outline-primary
+                           {% elif article.media_type == 'video' %}btn-outline-danger
+                           {% elif article.media_type == 'podcast' %}btn-outline-success
+                           {% endif %}" 
+                           {% if article.source_url %}target="_blank"{% else %}data-bs-toggle="modal" data-bs-target="#newsModal" 
+                           data-news-title="{{ article.title }}" 
+                           data-news-content="{{ article.content }}"
+                           data-news-type="{{ article.media_type }}"
+                           data-news-url="{{ article.media_url or '' }}"
+                           data-news-source="{{ article.source or 'Ulimi Wise' }}"
+                           data-news-date="{{ article.created_at.strftime('%Y-%m-%d') }}"{% endif %}>
+                            {% if article.media_type == 'article' %}
+                            {{ 'Read' | translate(lang) }}
+                            {% elif article.media_type == 'video' %}
+                            {{ 'Watch' | translate(lang) }}
+                            {% elif article.media_type == 'podcast' %}
+                            {{ 'Listen' | translate(lang) }}
+                            {% endif %}
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-12">
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle-fill"></i> {{ 'No news articles available yet.' | translate(lang) }}
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- News Detail Modal -->
+    <div class="modal fade" id="newsModal" tabindex="-1" aria-labelledby="newsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="newsModalLabel"></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3 d-flex justify-content-between">
+                        <span id="newsSource" class="text-muted"></span>
+                        <span id="newsDate" class="text-muted"></span>
+                    </div>
+                    
+                    <!-- Article content -->
+                    <div id="articleContent" class="mb-3"></div>
+                    
+                    <!-- Video content -->
+                    <div id="videoContent" class="mb-3 ratio ratio-16x9" style="display:none;">
+                        <iframe id="videoFrame" src="" allowfullscreen></iframe>
+                    </div>
+                    
+                    <!-- Podcast content -->
+                    <div id="podcastContent" class="mb-3" style="display:none;">
+                        <audio id="audioPlayer" class="w-100" controls>
+                            <source id="audioSource" src="" type="audio/mpeg">
+                            {{ 'Your browser does not support the audio element.' | translate(lang) }}
+                        </audio>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'Close' | translate(lang) }}</button>
+                    <button type="button" class="btn btn-primary share-news-btn">
+                        <i class="bi bi-share"></i> {{ 'Share' | translate(lang) }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Handle filter clicks
+        const filterButtons = document.querySelectorAll('.news-filter');
+        filterButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                // Update active button
+                filterButtons.forEach(btn => btn.classList.remove('active'));
+                this.classList.add('active');
+                
+                // Apply filter
+                const filterValue = this.dataset.filter;
+                filterNews(filterValue);
+            });
+        });
+        
+        // Handle search
+        const searchButton = document.getElementById('searchButton');
+        const searchInput = document.getElementById('searchNews');
+        
+        searchButton.addEventListener('click', function() {
+            applySearch();
+        });
+        
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                applySearch();
+            }
+        });
+        
+        // Open news modal with content
+        const newsLinks = document.querySelectorAll('.news-item .card-footer a[data-bs-toggle="modal"]');
+        newsLinks.forEach(link => {
+            link.addEventListener('click', function() {
+                const title = this.dataset.newsTitle;
+                const content = this.dataset.newsContent;
+                const type = this.dataset.newsType;
+                const url = this.dataset.newsUrl;
+                const source = this.dataset.newsSource;
+                const date = this.dataset.newsDate;
+                
+                document.getElementById('newsModalLabel').textContent = title;
+                document.getElementById('newsSource').textContent = source;
+                document.getElementById('newsDate').textContent = date;
+                
+                // Hide all content divs first
+                document.getElementById('articleContent').style.display = 'none';
+                document.getElementById('videoContent').style.display = 'none';
+                document.getElementById('podcastContent').style.display = 'none';
+                
+                // Show appropriate content based on type
+                if (type === 'article') {
+                    document.getElementById('articleContent').textContent = content;
+                    document.getElementById('articleContent').style.display = 'block';
+                } else if (type === 'video' && url) {
+                    document.getElementById('videoFrame').src = url;
+                    document.getElementById('videoContent').style.display = 'block';
+                } else if (type === 'podcast' && url) {
+                    document.getElementById('audioSource').src = url;
+                    document.getElementById('audioPlayer').load();
+                    document.getElementById('podcastContent').style.display = 'block';
+                } else {
+                    // Fallback to text content if URL is missing
+                    document.getElementById('articleContent').textContent = content;
+                    document.getElementById('articleContent').style.display = 'block';
+                }
+            });
+        });
+        
+        // Share news functionality
+        document.querySelector('.share-news-btn').addEventListener('click', function() {
+            const newsTitle = document.getElementById('newsModalLabel').textContent;
+            const newsSource = document.getElementById('newsSource').textContent;
+            
+            // Use Web Share API if available
+            if (navigator.share) {
+                navigator.share({
+                    title: newsTitle,
+                    text: `${newsTitle} - from ${newsSource}`,
+                    url: window.location.href
+                })
+                .catch(err => {
+                    console.error('Error sharing:', err);
+                });
+            } else {
+                // Fallback - copy URL to clipboard
+                const textarea = document.createElement('textarea');
+                textarea.value = window.location.href;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                
+                showNotification('{{ "Link copied to clipboard" | translate(lang) }}', 'success');
+            }
+        });
+        
+        // Function to filter news by type
+        function filterNews(type) {
+            const newsItems = document.querySelectorAll('.news-item');
+            let visibleCount = 0;
+            
+            newsItems.forEach(item => {
+                if (type === 'all' || item.dataset.type === type) {
+                    item.style.display = '';
+                    visibleCount++;
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+            
+            // Apply search on top of type filter
+            applySearch(false);
+        }
+        
+        // Function to apply search
+        function applySearch(resetTypeFilter = true) {
+            const searchText = document.getElementById('searchNews').value.toLowerCase();
+            const newsItems = document.querySelectorAll('.news-item');
+            let visibleCount = 0;
+            
+            // Reset type filter if requested
+            if (resetTypeFilter) {
+                document.querySelectorAll('.news-filter').forEach(btn => btn.classList.remove('active'));
+                document.querySelector('.news-filter[data-filter="all"]').classList.add('active');
+            }
+            
+            // Get current type filter
+            const activeTypeFilter = document.querySelector('.news-filter.active').dataset.filter;
+            
+            newsItems.forEach(item => {
+                const title = item.querySelector('.card-title').textContent.toLowerCase();
+                const content = item.querySelector('.card-text').textContent.toLowerCase();
+                const type = item.dataset.type;
+                
+                let showItem = true;
+                
+                // Apply type filter
+                if (activeTypeFilter !== 'all' && type !== activeTypeFilter) {
+                    showItem = false;
+                }
+                
+                // Apply search filter
+                if (searchText && !title.includes(searchText) && !content.includes(searchText)) {
+                    showItem = false;
+                }
+                
+                // Show or hide the item
+                if (showItem) {
+                    item.style.display = '';
+                    visibleCount++;
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+            
+            // Show no results message if needed
+            if (visibleCount === 0) {
+                document.getElementById('noResults').style.display = 'block';
+            } else {
+                document.getElementById('noResults').style.display = 'none';
+            }
+        }
+    });
+</script>
+{% endblock %}

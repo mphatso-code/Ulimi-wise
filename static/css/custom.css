@@ -1,0 +1,250 @@
+/* Ulimi Wise - Custom CSS */
+
+/* Colors and variables are mostly handled by Bootstrap, 
+ * this file contains only specific customizations
+ */
+
+/* General styling */
+body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+main {
+    flex: 1;
+}
+
+/* Card hover effects */
+.card-hover:hover {
+    transform: translateY(-5px);
+    transition: transform 0.3s ease;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Custom navbar styling */
+.navbar-brand img {
+    max-height: 40px;
+    margin-right: 10px;
+}
+
+/* Dashboard styling */
+.stats-card {
+    border-left: 4px solid var(--bs-primary);
+    transition: all 0.3s;
+}
+
+.stats-card:hover {
+    transform: translateY(-5px);
+}
+
+.stats-card.weather {
+    border-left-color: var(--bs-info);
+}
+
+.stats-card.tips {
+    border-left-color: var(--bs-success);
+}
+
+.stats-card.marketplace {
+    border-left-color: var(--bs-warning);
+}
+
+.stats-card.news {
+    border-left-color: var(--bs-danger);
+}
+
+/* Weather widget styling */
+.weather-icon {
+    font-size: 2.5rem;
+}
+
+.temperature-display {
+    font-size: 2.2rem;
+    font-weight: bold;
+}
+
+/* Marketplace styling */
+.product-card {
+    transition: all 0.3s ease;
+}
+
+.product-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Chatbot styling */
+.chat-container {
+    height: 60vh;
+    min-height: 400px;
+    max-height: 70vh;
+    overflow-y: auto;
+    border: 1px solid var(--bs-border-color);
+    border-radius: 0.375rem;
+    background-color: var(--bs-dark-bg-subtle);
+}
+
+.chat-message {
+    display: flex;
+    margin-bottom: 15px;
+    padding: 10px 15px;
+}
+
+.user-message {
+    justify-content: flex-end;
+}
+
+.bot-message {
+    justify-content: flex-start;
+}
+
+.avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    margin-right: 10px;
+    background-color: var(--bs-tertiary-bg);
+}
+
+.user-message .avatar {
+    order: 2;
+    margin-right: 0;
+    margin-left: 10px;
+    background-color: var(--bs-primary-bg-subtle);
+    color: var(--bs-primary);
+}
+
+.bot-message .avatar {
+    background-color: var(--bs-info-bg-subtle);
+    color: var(--bs-info);
+}
+
+.message-content {
+    max-width: 70%;
+}
+
+.user-message .message-content {
+    text-align: right;
+}
+
+.message-text {
+    padding: 10px 15px;
+    border-radius: 18px;
+    margin-bottom: 5px;
+    display: inline-block;
+    max-width: 100%;
+    word-wrap: break-word;
+}
+
+.user-message .message-text {
+    background-color: var(--bs-primary);
+    color: white;
+    border-top-right-radius: 4px;
+}
+
+.bot-message .message-text {
+    background-color: var(--bs-secondary-bg);
+    color: var(--bs-body-color);
+    border-top-left-radius: 4px;
+}
+
+.message-time {
+    font-size: 0.75rem;
+    color: var(--bs-secondary-color);
+}
+
+/* Typing indicator */
+.typing-dots {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 20px;
+}
+
+.typing-dots span {
+    width: 8px;
+    height: 8px;
+    background-color: var(--bs-body-color);
+    border-radius: 50%;
+    margin: 0 3px;
+    animation: typing 1.5s infinite;
+    opacity: 0.7;
+}
+
+.typing-dots span:nth-child(2) {
+    animation-delay: 0.3s;
+}
+
+.typing-dots span:nth-child(3) {
+    animation-delay: 0.6s;
+}
+
+@keyframes typing {
+    0%, 100% {
+        transform: translateY(0px);
+    }
+    50% {
+        transform: translateY(-5px);
+    }
+}
+
+/* News cards styling */
+.news-card {
+    height: 100%;
+    transition: all 0.3s ease;
+}
+
+.news-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}
+
+.news-card .card-img-top {
+    height: 180px;
+    object-fit: cover;
+}
+
+.news-media-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+}
+
+/* Farming tips styling */
+.tip-card {
+    transition: all 0.3s ease;
+}
+
+.tip-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}
+
+.tip-category-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+}
+
+/* Language selector styling */
+.language-selector {
+    min-width: 120px;
+}
+
+/* Media queries */
+@media (max-width: 767.98px) {
+    .message-content {
+        max-width: 85%;
+    }
+    
+    .avatar {
+        width: 35px;
+        height: 35px;
+        font-size: 1.1rem;
+    }
+}
