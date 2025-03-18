@@ -22,6 +22,14 @@
                 {% for season in seasons %}
                 <li><a class="dropdown-item filter-item" href="#" data-filter="season" data-value="{{ season }}">{{ season | capitalize }}</a></li>
                 {% endfor %}
+                
+                <li><hr class="dropdown-divider"></li>
+                
+                <li><h6 class="dropdown-header">{{ 'Farm Types' | translate(lang) }}</h6></li>
+                <li><a class="dropdown-item filter-item" href="#" data-filter="farm-type" data-value="all">{{ 'All Farm Types' | translate(lang) }}</a></li>
+                {% for farm_type in farm_types %}
+                <li><a class="dropdown-item filter-item" href="#" data-filter="farm-type" data-value="{{ farm_type }}">{{ farm_type | capitalize }}</a></li>
+                {% endfor %}
             </ul>
         </div>
     </div>
@@ -70,6 +78,7 @@
                         </div>
                         <p class="card-text">{{ tip.content|truncate(150) }}</p>
                         <button class="btn btn-sm btn-outline-primary mt-2 view-tip-btn" data-bs-toggle="modal" data-bs-target="#tipModal" 
+                                data-tip-id="{{ tip.id }}"
                                 data-tip-title="{{ tip.title }}" 
                                 data-tip-content="{{ tip.content }}"
                                 data-tip-category="{{ tip.category }}"
@@ -218,7 +227,79 @@
                 const cropIconElement = document.getElementById('cropIcon');
                 const iconPath = `/static/images/crops/${category.toLowerCase()}.svg`;
                 cropIconElement.innerHTML = `<img src="${iconPath}" alt="${category}" width="64" height="64" onerror="this.src='/static/images/crops/maize.svg'">`;
+                
+                // Get and display related resources
+                const tipId = this.dataset.tipId;
+                if (tipId) {
+                    fetch(`/api/tips/${tipId}/resources`)
+                        .then(response => response.json())
+                        .then(data => {
+                            const resourcesContainer = document.getElementById('resourcesContainer');
+                            resourcesContainer.innerHTML = '';
+                            
+                            if (data.resources && data.resources.length > 0) {
+                                // Show resources section
+                                document.getElementById('relatedResources').classList.remove('d-none');
+                                
+                                // Populate resources
+                                data.resources.forEach(resource => {
+                                    const resourceCard = createResourceCard(resource);
+                                    resourcesContainer.appendChild(resourceCard);
+                                });
+                            } else {
+                                // Hide resources section if no resources
+                                document.getElementById('relatedResources').classList.add('d-none');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error fetching resources:', error);
+                            document.getElementById('relatedResources').classList.add('d-none');
+                        });
+                }
             });
+            
+        /**
+         * Create a resource card element
+         * @param {Object} resource - Resource data
+         * @returns {HTMLElement} - Resource card element
+         */
+        function createResourceCard(resource) {
+            const col = document.createElement('div');
+            col.className = 'col-md-6 col-lg-4';
+            
+            let icon = 'file-text';
+            let iconClass = 'text-primary';
+            
+            if (resource.resource_type === 'video') {
+                icon = 'play-circle';
+                iconClass = 'text-danger';
+            } else if (resource.resource_type === 'podcast') {
+                icon = 'headphones';
+                iconClass = 'text-success';
+            }
+            
+            col.innerHTML = `
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="bi bi-${icon} ${iconClass} fs-4 me-2"></i>
+                            <h6 class="card-title mb-0">${resource.title}</h6>
+                        </div>
+                        <p class="card-text small text-muted">${resource.description || ''}</p>
+                        <div class="mt-auto">
+                            <a href="${resource.url}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-box-arrow-up-right"></i> {{ 'View Resource' | translate(lang) }}
+                            </a>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-transparent">
+                        <small class="text-muted">{{ 'Source' | translate(lang) }}: ${resource.source || 'Unknown'}</small>
+                    </div>
+                </div>
+            `;
+            
+            return col;
+        }
             
         // Function to format tip content with nice paragraphs and sections
         function formatTipContent(content) {

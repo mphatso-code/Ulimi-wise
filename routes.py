@@ -2,12 +2,15 @@ from flask import render_template, request, redirect, url_for, flash, jsonify, s
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash
 from app import app, db
-from models import User, Product, FarmingTip, NewsArticle, WeatherAlert, ChatHistory
+from models import (User, Product, FarmingTip, NewsArticle, WeatherAlert, ChatHistory,
+                   MediaResource, FarmerChatMessage, FarmerChatRoom, SoilAnalysis, 
+                   CropCalendar, chat_room_participants)
 from chatbot import process_message
 from weather import get_weather_for_location, get_weather_recommendations
 from translations import get_translation, get_available_languages
 from utils import is_valid_email, allowed_file, save_file
 import logging
+from datetime import datetime
 
 
 @app.route('/')
@@ -286,8 +289,14 @@ def tips():
     if current_user.is_authenticated:
         lang = current_user.preferred_language or lang
     
+    # Get filter parameters
+    farm_type = request.args.get('farm_type')
+    
     # Get all tips
-    all_tips = FarmingTip.query.order_by(FarmingTip.created_at.desc()).all()
+    if farm_type and farm_type != 'all':
+        all_tips = FarmingTip.query.filter_by(farm_type=farm_type).order_by(FarmingTip.created_at.desc()).all()
+    else:
+        all_tips = FarmingTip.query.order_by(FarmingTip.created_at.desc()).all()
     
     # Get categories for filtering
     categories = db.session.query(FarmingTip.category).distinct().all()
@@ -297,12 +306,43 @@ def tips():
     seasons = db.session.query(FarmingTip.season).distinct().all()
     seasons = [s[0] for s in seasons if s[0]]
     
+    # Get farm types for filtering
+    farm_types = db.session.query(FarmingTip.farm_type).distinct().all()
+    farm_types = [f[0] for f in farm_types if f[0]]
+    
     return render_template('tips.html',
                           lang=lang,
                           tips=all_tips,
                           categories=categories,
                           seasons=seasons,
+                          farm_types=farm_types,
                           title=get_translation("Farming Tips", lang))
+
+
+@app.route('/api/tips/<int:tip_id>/resources')
+def get_tip_resources(tip_id):
+    """Get resources related to a specific farming tip"""
+    lang = session.get('language', 'en')
+    if current_user.is_authenticated:
+        lang = current_user.preferred_language or lang
+    
+    tip = FarmingTip.query.get_or_404(tip_id)
+    resources = tip.related_resources
+    
+    resource_list = []
+    for resource in resources:
+        resource_list.append({
+            'id': resource.id,
+            'title': resource.title,
+            'description': resource.description,
+            'resource_type': resource.resource_type,
+            'url': resource.url,
+            'source': resource.source,
+            'author': resource.author,
+            'thumbnail_url': resource.thumbnail_url
+        })
+    
+    return jsonify({'resources': resource_list})
 
 
 @app.route('/news')
@@ -480,3 +520,262 @@ def server_error(e):
     if current_user.is_authenticated:
         lang = current_user.preferred_language or lang
     return render_template('500.html', lang=lang), 500
+
+
+#
+# Farmer Chat (Community Chat) Routes
+#
+
+@app.route('/community-chat')
+@login_required
+def community_chat():
+    """Farmer community chat page"""
+    lang = current_user.preferred_language or session.get('language', 'en')
+    
+    # Get user's chat rooms
+    user_rooms = current_user.chat_rooms
+    
+    # Get public chat rooms
+    public_rooms = FarmerChatRoom.query.filter_by(is_group=True).all()
+    
+    # Get extension officers
+    extension_officers = User.query.filter_by(is_extension_officer=True).all()
+    
+    # Get buyers/aggregators
+    buyers = User.query.filter_by(is_buyer=True).all()
+    
+    return render_template('community_chat.html',
+                          lang=lang,
+                          user_rooms=user_rooms,
+                          public_rooms=public_rooms,
+                          extension_officers=extension_officers,
+                          buyers=buyers,
+                          title=get_translation("Farmer Community Chat", lang))
+
+
+@app.route('/community-chat/rooms', methods=['GET'])
+@login_required
+def get_chat_rooms():
+    """Get chat rooms for the current user"""
+    user_rooms = current_user.chat_rooms
+    
+    rooms_list = []
+    for room in user_rooms:
+        # Get the last message in the room
+        last_message = FarmerChatMessage.query.filter_by(chat_room_id=room.id).order_by(FarmerChatMessage.created_at.desc()).first()
+        
+        # Get other participants for private chats
+        other_participants = []
+        if not room.is_group:
+            other_participants = [user for user in room.participants if user.id != current_user.id]
+        
+        rooms_list.append({
+            'id': room.id,
+            'name': room.name,
+            'is_group': room.is_group,
+            'topic': room.topic,
+            'created_at': room.created_at.strftime('%Y-%m-%d %H:%M'),
+            'last_message': last_message.message[:50] + '...' if last_message and len(last_message.message) > 50 else (last_message.message if last_message else None),
+            'last_message_time': last_message.created_at.strftime('%Y-%m-%d %H:%M') if last_message else None,
+            'participants': [{'id': user.id, 'username': user.username} for user in other_participants] if not room.is_group else None
+        })
+    
+    return jsonify({'rooms': rooms_list})
+
+
+@app.route('/community-chat/rooms/<int:room_id>/messages', methods=['GET'])
+@login_required
+def get_chat_messages(room_id):
+    """Get messages for a specific chat room"""
+    # Check if user is a participant in the room
+    room = FarmerChatRoom.query.get_or_404(room_id)
+    if current_user not in room.participants:
+        return jsonify({'error': 'You are not a participant in this chat room'}), 403
+    
+    # Get messages in the room
+    messages = FarmerChatMessage.query.filter_by(chat_room_id=room_id).order_by(FarmerChatMessage.created_at).all()
+    
+    messages_list = []
+    for message in messages:
+        messages_list.append({
+            'id': message.id,
+            'sender_id': message.sender_id,
+            'sender_name': message.sender.username,
+            'message': message.message,
+            'created_at': message.created_at.strftime('%Y-%m-%d %H:%M'),
+            'is_mine': message.sender_id == current_user.id
+        })
+    
+    return jsonify({
+        'messages': messages_list,
+        'room': {
+            'id': room.id,
+            'name': room.name,
+            'is_group': room.is_group,
+            'topic': room.topic,
+            'participants': [{'id': user.id, 'username': user.username} for user in room.participants]
+        }
+    })
+
+
+@app.route('/community-chat/rooms/<int:room_id>/messages', methods=['POST'])
+@login_required
+def send_chat_message(room_id):
+    """Send a message to a chat room"""
+    # Check if user is a participant in the room
+    room = FarmerChatRoom.query.get_or_404(room_id)
+    if current_user not in room.participants:
+        return jsonify({'error': 'You are not a participant in this chat room'}), 403
+    
+    message_text = request.form.get('message', '')
+    if not message_text:
+        return jsonify({'error': 'No message provided'}), 400
+    
+    # Create new message
+    new_message = FarmerChatMessage(
+        chat_room_id=room_id,
+        sender_id=current_user.id,
+        message=message_text,
+        created_at=datetime.utcnow(),
+        is_read=False
+    )
+    
+    db.session.add(new_message)
+    db.session.commit()
+    
+    return jsonify({
+        'success': True,
+        'message': {
+            'id': new_message.id,
+            'sender_id': new_message.sender_id,
+            'sender_name': current_user.username,
+            'message': new_message.message,
+            'created_at': new_message.created_at.strftime('%Y-%m-%d %H:%M'),
+            'is_mine': True
+        }
+    })
+
+
+@app.route('/community-chat/rooms', methods=['POST'])
+@login_required
+def create_chat_room():
+    """Create a new chat room"""
+    name = request.form.get('name', '')
+    description = request.form.get('description', '')
+    is_group = request.form.get('is_group', 'false').lower() == 'true'
+    topic = request.form.get('topic', '')
+    participant_ids = request.form.getlist('participants[]')
+    
+    if not name:
+        return jsonify({'error': 'Room name is required'}), 400
+    
+    # Create new chat room
+    new_room = FarmerChatRoom(
+        name=name,
+        description=description,
+        is_group=is_group,
+        created_at=datetime.utcnow(),
+        created_by_id=current_user.id,
+        topic=topic
+    )
+    
+    # Add current user as participant
+    new_room.participants.append(current_user)
+    
+    # Add other participants
+    if participant_ids:
+        for user_id in participant_ids:
+            user = User.query.get(int(user_id))
+            if user and user != current_user:
+                new_room.participants.append(user)
+    
+    db.session.add(new_room)
+    db.session.commit()
+    
+    return jsonify({
+        'success': True,
+        'room': {
+            'id': new_room.id,
+            'name': new_room.name,
+            'is_group': new_room.is_group,
+            'topic': new_room.topic,
+            'created_at': new_room.created_at.strftime('%Y-%m-%d %H:%M'),
+            'participants': [{'id': user.id, 'username': user.username} for user in new_room.participants]
+        }
+    })
+
+
+@app.route('/community-chat/start-private-chat', methods=['POST'])
+@login_required
+def start_private_chat():
+    """Start a private chat with another user"""
+    user_id = request.form.get('user_id')
+    if not user_id:
+        return jsonify({'error': 'User ID is required'}), 400
+    
+    other_user = User.query.get_or_404(int(user_id))
+    
+    # Check if a private chat already exists between these users
+    for room in current_user.chat_rooms:
+        if not room.is_group and other_user in room.participants:
+            return jsonify({
+                'success': True,
+                'room_id': room.id,
+                'exists': True
+            })
+    
+    # Create a new private chat room
+    room_name = f"Chat with {other_user.username}"
+    new_room = FarmerChatRoom(
+        name=room_name,
+        is_group=False,
+        created_at=datetime.utcnow(),
+        created_by_id=current_user.id
+    )
+    
+    # Add both users as participants
+    new_room.participants.append(current_user)
+    new_room.participants.append(other_user)
+    
+    db.session.add(new_room)
+    db.session.commit()
+    
+    return jsonify({
+        'success': True,
+        'room_id': new_room.id,
+        'exists': False
+    })
+
+
+@app.route('/users/extension-officers')
+@login_required
+def get_extension_officers():
+    """Get a list of extension officers"""
+    officers = User.query.filter_by(is_extension_officer=True).all()
+    
+    officers_list = []
+    for officer in officers:
+        officers_list.append({
+            'id': officer.id,
+            'username': officer.username,
+            'location': officer.location
+        })
+    
+    return jsonify({'officers': officers_list})
+
+
+@app.route('/users/buyers')
+@login_required
+def get_buyers():
+    """Get a list of agricultural buyers/aggregators"""
+    buyers = User.query.filter_by(is_buyer=True).all()
+    
+    buyers_list = []
+    for buyer in buyers:
+        buyers_list.append({
+            'id': buyer.id,
+            'username': buyer.username,
+            'location': buyer.location
+        })
+    
+    return jsonify({'buyers': buyers_list})
