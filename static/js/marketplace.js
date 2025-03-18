@@ -3,6 +3,15 @@
  * Handles marketplace functionality like filtering, adding, editing products
  */
 
+// Access the global language variable without redeclaring it
+let currentLanguage;
+if (typeof window.currentLanguage !== 'undefined') {
+    currentLanguage = window.currentLanguage;
+} else {
+    // Fallback in case window.currentLanguage isn't available
+    currentLanguage = document.documentElement.lang || localStorage.getItem('language') || 'en';
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Marketplace script loaded');
     
