@@ -231,6 +231,65 @@ main {
     right: 10px;
 }
 
+.crop-icon {
+    width: 64px;
+    height: 64px;
+    margin-bottom: 15px;
+}
+
+.tip-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.tip-header-text {
+    margin-left: 15px;
+}
+
+.tip-content {
+    font-size: 1.05rem;
+    line-height: 1.6;
+}
+
+.tip-content p {
+    margin-bottom: 1.2rem;
+}
+
+.tip-content ul, .tip-content ol {
+    margin-bottom: 1.2rem;
+    padding-left: 1.5rem;
+}
+
+.tip-content li {
+    margin-bottom: 0.5rem;
+}
+
+.tip-content h3 {
+    margin-top: 1.5rem;
+    margin-bottom: 1rem;
+    font-size: 1.3rem;
+    font-weight: 600;
+}
+
+.tip-section {
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--bs-border-color);
+}
+
+.tip-section:last-child {
+    border-bottom: none;
+}
+
+.tip-info-box {
+    background-color: var(--bs-info-bg-subtle);
+    border-left: 4px solid var(--bs-info);
+    padding: 15px;
+    margin: 20px 0;
+    border-radius: 4px;
+}
+
 /* Language selector styling */
 .language-selector {
     min-width: 120px;

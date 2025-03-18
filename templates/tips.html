@@ -64,7 +64,10 @@
                 <div class="card h-100 shadow-sm tip-card">
                     <div class="card-body">
                         <span class="badge bg-success tip-category-badge">{{ tip.category }}</span>
-                        <h5 class="card-title">{{ tip.title }}</h5>
+                        <div class="d-flex align-items-center mb-3">
+                            <img src="/static/images/crops/{{ tip.category|lower }}.svg" alt="{{ tip.category }}" class="me-3" width="32" height="32" onerror="this.src='/static/images/crops/maize.svg'">
+                            <h5 class="card-title mb-0">{{ tip.title }}</h5>
+                        </div>
                         <p class="card-text">{{ tip.content|truncate(150) }}</p>
                         <button class="btn btn-sm btn-outline-primary mt-2 view-tip-btn" data-bs-toggle="modal" data-bs-target="#tipModal" 
                                 data-tip-title="{{ tip.title }}" 
@@ -103,19 +106,24 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="mb-3 d-flex justify-content-between">
-                        <span id="tipCategory" class="badge bg-success"></span>
-                        <span id="tipDate" class="text-muted"></span>
-                    </div>
-                    <div id="tipContent" class="mb-3"></div>
-                    <div class="row mt-4 tip-meta">
-                        <div class="col-md-6">
-                            <strong>{{ 'Season' | translate(lang) }}:</strong> <span id="tipSeason"></span>
+                    <div class="tip-header">
+                        <div id="cropIcon" class="crop-icon">
+                            <!-- Crop icon inserted here by JavaScript -->
                         </div>
-                        <div class="col-md-6">
-                            <strong>{{ 'Region' | translate(lang) }}:</strong> <span id="tipRegion"></span>
+                        <div class="tip-header-text">
+                            <span id="tipCategory" class="badge bg-success mb-2"></span>
+                            <div class="text-muted small">
+                                <strong>{{ 'Season' | translate(lang) }}:</strong> <span id="tipSeason"></span>
+                            </div>
+                            <div class="text-muted small">
+                                <strong>{{ 'Region' | translate(lang) }}:</strong> <span id="tipRegion"></span>
+                            </div>
+                            <div class="text-muted small">
+                                <strong>{{ 'Date' | translate(lang) }}:</strong> <span id="tipDate"></span>
+                            </div>
                         </div>
                     </div>
+                    <div id="tipContent" class="tip-content"></div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'Close' | translate(lang) }}</button>
@@ -188,12 +196,92 @@
                 const date = this.dataset.tipDate;
                 
                 document.getElementById('tipModalLabel').textContent = title;
-                document.getElementById('tipContent').textContent = content;
+                
+                // Format content into nice paragraphs
+                const formattedContent = formatTipContent(content);
+                document.getElementById('tipContent').innerHTML = formattedContent;
+                
                 document.getElementById('tipCategory').textContent = category;
                 document.getElementById('tipDate').textContent = date;
                 document.getElementById('tipSeason').textContent = season || '{{ "Not specified" | translate(lang) }}';
                 document.getElementById('tipRegion').textContent = region || '{{ "Not specified" | translate(lang) }}';
+                
+                // Add crop icon based on category
+                const cropIconElement = document.getElementById('cropIcon');
+                const iconPath = `/static/images/crops/${category.toLowerCase()}.svg`;
+                cropIconElement.innerHTML = `<img src="${iconPath}" alt="${category}" width="64" height="64" onerror="this.src='/static/images/crops/maize.svg'">`;
             });
+            
+        // Function to format tip content with nice paragraphs and sections
+        function formatTipContent(content) {
+            // Remove extra whitespace
+            content = content.trim();
+            
+            // Split content by numbered sections (e.g., "1. Land Preparation:")
+            const sections = content.split(/\n\d+\.\s+[A-Z][a-zA-Z\s]+:/g);
+            const headings = content.match(/\d+\.\s+[A-Z][a-zA-Z\s]+:/g) || [];
+            
+            // If no sections were found, just format as paragraphs
+            if (sections.length <= 1) {
+                return formatParagraphs(content);
+            }
+            
+            // Format each section with its heading
+            let formattedContent = formatParagraphs(sections[0]); // Intro paragraph
+            
+            for (let i = 0; i < headings.length; i++) {
+                const sectionContent = sections[i + 1] || '';
+                formattedContent += `<div class="tip-section">
+                    <h3>${headings[i]}</h3>
+                    ${formatParagraphs(sectionContent)}
+                </div>`;
+            }
+            
+            return formattedContent;
+        }
+        
+        // Function to format text into paragraphs
+        function formatParagraphs(text) {
+            // Remove leading/trailing whitespace
+            text = text.trim();
+            
+            // Handle lists (lines starting with - or *)
+            const listItems = text.match(/^[\s]*[-*]\s+.+$/gm);
+            if (listItems && listItems.length > 0) {
+                // Replace list items with <li> elements
+                let formattedText = text;
+                listItems.forEach(item => {
+                    const itemText = item.replace(/^[\s]*[-*]\s+/, '').trim();
+                    formattedText = formattedText.replace(item, `<li>${itemText}</li>`);
+                });
+                
+                // Wrap list items in <ul>
+                formattedText = formattedText.replace(/<li>.*?<\/li>(\s*<li>.*?<\/li>)*/gs, match => {
+                    return `<ul>${match}</ul>`;
+                });
+                
+                // Split remaining text into paragraphs
+                formattedText = formattedText.replace(/(<\/ul>|^)([^<]+)(?=<ul>|$)/gs, (match, p1, p2) => {
+                    if (p2.trim()) {
+                        const paragraphs = p2.split(/\n\n+/).map(p => p.trim()).filter(p => p);
+                        return `${p1||''}${paragraphs.map(p => `<p>${p}</p>`).join('')}`;
+                    }
+                    return match;
+                });
+                
+                return formattedText;
+            }
+            
+            // Split text into paragraphs (separated by 2+ newlines)
+            const paragraphs = text.split(/\n\n+/);
+            
+            // Create HTML for paragraphs
+            return paragraphs
+                .map(p => p.trim())
+                .filter(p => p.length > 0)
+                .map(p => `<p>${p.replace(/\n/g, '<br>')}</p>`)
+                .join('');
+        }
         });
         
         // Share tip functionality
