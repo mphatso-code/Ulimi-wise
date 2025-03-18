@@ -3,6 +3,15 @@
  * Handles weather data fetching and display
  */
 
+// Define current language variable or get it from main.js if available
+let currentLanguage = 'en';
+if (typeof window.currentLanguage !== 'undefined') {
+    currentLanguage = window.currentLanguage;
+} else {
+    // Try to get language from HTML lang attribute or localStorage
+    currentLanguage = document.documentElement.lang || localStorage.getItem('language') || 'en';
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Weather script loaded');
     

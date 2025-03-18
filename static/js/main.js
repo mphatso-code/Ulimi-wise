@@ -4,7 +4,8 @@
  */
 
 // Global variables
-let currentLanguage = 'en';
+window.currentLanguage = 'en';
+let currentLanguage = window.currentLanguage;
 let translations = {};
 
 // Initialize the application when DOM is loaded
@@ -13,6 +14,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Set current language from HTML lang attribute or local storage
     currentLanguage = document.documentElement.lang || localStorage.getItem('language') || 'en';
+    window.currentLanguage = currentLanguage;
     
     // Initialize language selector
     initLanguageSelector();
@@ -50,6 +52,7 @@ function initLanguageSelector() {
         // Add event listener for language change
         languageSelector.addEventListener('change', function(e) {
             const newLanguage = e.target.value;
+            window.currentLanguage = newLanguage;
             changeLanguage(newLanguage);
         });
     }
@@ -118,7 +121,7 @@ function initPopovers() {
  * @param {string} message - The message to display
  * @param {string} type - The type of toast (success, danger, warning, info)
  */
-function showNotification(message, type = 'info') {
+window.showNotification = function(message, type = 'info') {
     const toastContainer = document.getElementById('toastContainer');
     if (!toastContainer) {
         console.error('Toast container not found');
