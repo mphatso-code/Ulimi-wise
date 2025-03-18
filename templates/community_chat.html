@@ -1,0 +1,405 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar with chat rooms -->
+        <div class="col-md-3 col-lg-3 chat-sidebar border-end">
+            <div class="d-flex justify-content-between align-items-center p-3 border-bottom">
+                <h5 class="mb-0">{{ 'Chats' | translate(lang) }}</h5>
+                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#newChatModal">
+                    <i class="bi bi-plus-circle"></i>
+                </button>
+            </div>
+            
+            <!-- Chat tabs -->
+            <ul class="nav nav-tabs nav-fill" id="chatTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="private-chats-tab" data-bs-toggle="tab" data-bs-target="#private-chats" type="button" role="tab" aria-controls="private-chats" aria-selected="true">
+                        {{ 'Private' | translate(lang) }}
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="group-chats-tab" data-bs-toggle="tab" data-bs-target="#group-chats" type="button" role="tab" aria-controls="group-chats" aria-selected="false">
+                        {{ 'Groups' | translate(lang) }}
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="stakeholders-tab" data-bs-toggle="tab" data-bs-target="#stakeholders" type="button" role="tab" aria-controls="stakeholders" aria-selected="false">
+                        {{ 'Stakeholders' | translate(lang) }}
+                    </button>
+                </li>
+            </ul>
+            
+            <!-- Chat list content -->
+            <div class="tab-content p-0" id="chatTabsContent">
+                <!-- Private chats -->
+                <div class="tab-pane fade show active" id="private-chats" role="tabpanel" aria-labelledby="private-chats-tab">
+                    <div class="list-group list-group-flush chat-list" id="private-chats-list">
+                        {% for room in user_rooms if not room.is_group %}
+                        <a href="#" class="list-group-item list-group-item-action chat-room-item" data-room-id="{{ room.id }}">
+                            <div class="d-flex align-items-center">
+                                <div class="chat-avatar me-3">
+                                    <i class="bi bi-person-circle fs-3"></i>
+                                </div>
+                                <div class="flex-grow-1 min-width-0">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <h6 class="mb-0 text-truncate">{{ room.name }}</h6>
+                                        <small class="text-muted chat-time">
+                                            {% if room.messages %}
+                                            {{ room.messages[-1].created_at.strftime('%H:%M') }}
+                                            {% endif %}
+                                        </small>
+                                    </div>
+                                    <p class="mb-0 text-truncate small text-muted">
+                                        {% if room.messages %}
+                                        {{ room.messages[-1].message }}
+                                        {% endif %}
+                                    </p>
+                                </div>
+                            </div>
+                        </a>
+                        {% else %}
+                        <div class="text-center p-4 text-muted">
+                            <i class="bi bi-chat-left-text fs-1"></i>
+                            <p>{{ 'No private chats yet' | translate(lang) }}</p>
+                            <button class="btn btn-sm btn-outline-primary" data-bs-toggle="tab" data-bs-target="#stakeholders">
+                                {{ 'Start a chat' | translate(lang) }}
+                            </button>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <!-- Group chats -->
+                <div class="tab-pane fade" id="group-chats" role="tabpanel" aria-labelledby="group-chats-tab">
+                    <div class="list-group list-group-flush chat-list" id="group-chats-list">
+                        {% for room in user_rooms if room.is_group %}
+                        <a href="#" class="list-group-item list-group-item-action chat-room-item" data-room-id="{{ room.id }}">
+                            <div class="d-flex align-items-center">
+                                <div class="chat-avatar me-3">
+                                    <i class="bi bi-people-fill fs-3"></i>
+                                </div>
+                                <div class="flex-grow-1 min-width-0">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <h6 class="mb-0 text-truncate">{{ room.name }}</h6>
+                                        <small class="text-muted chat-time">
+                                            {% if room.messages %}
+                                            {{ room.messages[-1].created_at.strftime('%H:%M') }}
+                                            {% endif %}
+                                        </small>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <p class="mb-0 text-truncate small text-muted">
+                                            {% if room.messages %}
+                                            <span class="fw-bold">{{ room.messages[-1].sender.username }}:</span> {{ room.messages[-1].message }}
+                                            {% endif %}
+                                        </p>
+                                        {% if room.messages and not room.messages[-1].is_read %}
+                                        <span class="badge bg-primary rounded-pill ms-2">New</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                        {% else %}
+                        <div class="text-center p-4 text-muted">
+                            <i class="bi bi-people fs-1"></i>
+                            <p>{{ 'No group chats yet' | translate(lang) }}</p>
+                            <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#newChatModal">
+                                {{ 'Create a group' | translate(lang) }}
+                            </button>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <!-- Stakeholders (Extension Officers and Buyers) -->
+                <div class="tab-pane fade" id="stakeholders" role="tabpanel" aria-labelledby="stakeholders-tab">
+                    <!-- Extension Officers Section -->
+                    <div class="p-3 border-bottom">
+                        <h6 class="mb-2"><i class="bi bi-briefcase me-2"></i>{{ 'Extension Officers' | translate(lang) }}</h6>
+                        <div class="list-group list-group-flush" id="extension-officers-list">
+                            {% for officer in extension_officers %}
+                            <button class="list-group-item list-group-item-action d-flex align-items-center start-chat-btn"
+                                  data-user-id="{{ officer.id }}" data-user-name="{{ officer.username }}">
+                                <i class="bi bi-person-badge fs-5 me-2"></i>
+                                <div>
+                                    <h6 class="mb-0">{{ officer.username }}</h6>
+                                    <small class="text-muted">{{ officer.location }}</small>
+                                </div>
+                            </button>
+                            {% else %}
+                            <div class="text-center p-3 text-muted small">
+                                {{ 'No extension officers available' | translate(lang) }}
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <!-- Buyers/Aggregators Section -->
+                    <div class="p-3">
+                        <h6 class="mb-2"><i class="bi bi-shop me-2"></i>{{ 'Buyers & Aggregators' | translate(lang) }}</h6>
+                        <div class="list-group list-group-flush" id="buyers-list">
+                            {% for buyer in buyers %}
+                            <button class="list-group-item list-group-item-action d-flex align-items-center start-chat-btn"
+                                  data-user-id="{{ buyer.id }}" data-user-name="{{ buyer.username }}">
+                                <i class="bi bi-shop fs-5 me-2"></i>
+                                <div>
+                                    <h6 class="mb-0">{{ buyer.username }}</h6>
+                                    <small class="text-muted">{{ buyer.location }}</small>
+                                </div>
+                            </button>
+                            {% else %}
+                            <div class="text-center p-3 text-muted small">
+                                {{ 'No buyers available' | translate(lang) }}
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Chat content area -->
+        <div class="col-md-9 col-lg-9 chat-content p-0 d-flex flex-column" id="chatContentArea">
+            <!-- Default state when no chat is selected -->
+            <div class="h-100 d-flex flex-column justify-content-center align-items-center text-center p-4" id="noChatSelected">
+                <div class="mb-4">
+                    <i class="bi bi-chat-dots-fill fs-1 text-primary mb-3"></i>
+                    <h4>{{ 'Farmer Community Chat' | translate(lang) }}</h4>
+                    <p class="text-muted">
+                        {{ 'Connect with other farmers, extension officers, and buyers.' | translate(lang) }}<br>
+                        {{ 'Select a chat or start a new conversation.' | translate(lang) }}
+                    </p>
+                </div>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newChatModal">
+                    <i class="bi bi-plus-circle me-2"></i> {{ 'Start a new conversation' | translate(lang) }}
+                </button>
+            </div>
+            
+            <!-- Active chat layout (hidden by default) -->
+            <div class="h-100 d-flex flex-column d-none" id="activeChatArea">
+                <!-- Chat header -->
+                <div class="chat-header border-bottom p-3 d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center">
+                        <div class="chat-avatar me-3">
+                            <i class="bi bi-people-fill fs-3" id="chatRoomIcon"></i>
+                        </div>
+                        <div>
+                            <h5 class="mb-0" id="chatRoomName"></h5>
+                            <small class="text-muted" id="chatRoomParticipants"></small>
+                        </div>
+                    </div>
+                    <div>
+                        <button class="btn btn-sm btn-outline-secondary me-2" id="chatInfoBtn">
+                            <i class="bi bi-info-circle"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-secondary" id="closeChatBtn">
+                            <i class="bi bi-x"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Messages container -->
+                <div class="chat-messages flex-grow-1 p-3 overflow-auto" id="chatMessagesContainer">
+                    <!-- Messages will be loaded here dynamically -->
+                </div>
+                
+                <!-- Message input area -->
+                <div class="chat-input-area border-top p-3">
+                    <form id="chatMessageForm">
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="chatMessageInput" placeholder="{{ 'Type a message...' | translate(lang) }}">
+                            <button class="btn btn-primary" type="submit" id="sendMessageBtn">
+                                <i class="bi bi-send"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- New Chat/Group Modal -->
+<div class="modal fade" id="newChatModal" tabindex="-1" aria-labelledby="newChatModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="newChatModalLabel">{{ 'Create New Conversation' | translate(lang) }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="newChatForm">
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="isGroupChat">
+                            <label class="form-check-label" for="isGroupChat">{{ 'Group Chat' | translate(lang) }}</label>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="chatName" class="form-label">{{ 'Chat Name' | translate(lang) }}*</label>
+                        <input type="text" class="form-control" id="chatName" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="chatDescription" class="form-label">{{ 'Description' | translate(lang) }}</label>
+                        <textarea class="form-control" id="chatDescription" rows="2"></textarea>
+                    </div>
+                    
+                    <div class="mb-3" id="topicField">
+                        <label for="chatTopic" class="form-label">{{ 'Topic' | translate(lang) }}</label>
+                        <input type="text" class="form-control" id="chatTopic">
+                        <div class="form-text">{{ 'Topic helps others understand what this group is about' | translate(lang) }}</div>
+                    </div>
+                    
+                    <div class="mb-3 d-none" id="participantsField">
+                        <label class="form-label">{{ 'Participants' | translate(lang) }}*</label>
+                        <div class="participants-list border rounded p-2" style="max-height: 200px; overflow-y: auto;">
+                            <div class="form-check mb-2">
+                                <input class="form-check-input select-all-participants" type="checkbox" id="selectAllParticipants">
+                                <label class="form-check-label" for="selectAllParticipants">
+                                    {{ 'Select All' | translate(lang) }}
+                                </label>
+                            </div>
+                            <hr class="my-2">
+                            <div id="participantsList">
+                                <!-- Participants will be loaded here -->
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'Cancel' | translate(lang) }}</button>
+                <button type="button" class="btn btn-primary" id="createChatBtn">{{ 'Create' | translate(lang) }}</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chat Info Modal -->
+<div class="modal fade" id="chatInfoModal" tabindex="-1" aria-labelledby="chatInfoModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="chatInfoModalLabel">{{ 'Chat Information' | translate(lang) }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <h5 id="infoRoomName" class="mb-3"></h5>
+                
+                <div class="mb-3" id="infoTopicContainer">
+                    <h6>{{ 'Topic' | translate(lang) }}:</h6>
+                    <p id="infoRoomTopic" class="text-muted"></p>
+                </div>
+                
+                <div class="mb-3" id="infoDescriptionContainer">
+                    <h6>{{ 'Description' | translate(lang) }}:</h6>
+                    <p id="infoRoomDescription" class="text-muted"></p>
+                </div>
+                
+                <div class="mb-3">
+                    <h6>{{ 'Participants' | translate(lang) }}:</h6>
+                    <div class="list-group list-group-flush" id="infoParticipantsList">
+                        <!-- Participants will be loaded here -->
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <h6>{{ 'Created' | translate(lang) }}:</h6>
+                    <p id="infoCreatedAt" class="text-muted"></p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'Close' | translate(lang) }}</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .chat-sidebar {
+        height: calc(100vh - 72px);
+        overflow-y: auto;
+    }
+    
+    .chat-list {
+        max-height: calc(100vh - 150px);
+        overflow-y: auto;
+    }
+    
+    .chat-content {
+        height: calc(100vh - 72px);
+    }
+    
+    .chat-messages {
+        height: calc(100vh - 200px);
+    }
+    
+    .chat-avatar {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #f5f5f5;
+        border-radius: 50%;
+    }
+    
+    .message-bubble {
+        max-width: 75%;
+        padding: 10px 15px;
+        border-radius: 18px;
+        margin-bottom: 10px;
+        position: relative;
+    }
+    
+    .message-outgoing {
+        background-color: var(--bs-primary);
+        color: white;
+        border-bottom-right-radius: 5px;
+        margin-left: auto;
+    }
+    
+    .message-incoming {
+        background-color: #f0f2f5;
+        color: var(--bs-dark);
+        border-bottom-left-radius: 5px;
+    }
+    
+    .message-time {
+        font-size: 0.7rem;
+        margin-top: 5px;
+        opacity: 0.8;
+    }
+    
+    .message-sender {
+        font-size: 0.8rem;
+        font-weight: bold;
+        margin-bottom: 3px;
+    }
+    
+    @media (max-width: 767.98px) {
+        .chat-sidebar, .chat-content {
+            height: auto;
+        }
+        
+        .chat-messages {
+            height: 60vh;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Set current user ID for the community chat script
+    var currentUserId = {{ current_user.id }};
+</script>
+<script src="{{ url_for('static', filename='js/community_chat.js') }}"></script>
+{% endblock %}

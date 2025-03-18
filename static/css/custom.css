@@ -295,6 +295,96 @@ main {
     min-width: 120px;
 }
 
+/* Community Chat styling */
+.chat-sidebar {
+    height: calc(100vh - 72px);
+    overflow-y: auto;
+    border-right: 1px solid var(--bs-border-color);
+}
+
+.chat-content {
+    height: calc(100vh - 72px);
+}
+
+.chat-messages {
+    height: calc(100vh - 200px);
+}
+
+.chat-list .list-group-item {
+    transition: background-color 0.2s;
+}
+
+.chat-list .list-group-item:hover {
+    background-color: var(--bs-tertiary-bg);
+}
+
+.chat-list .list-group-item.active {
+    background-color: var(--bs-tertiary-bg);
+    color: inherit;
+    border-color: var(--bs-border-color);
+}
+
+.chat-avatar {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--bs-tertiary-bg);
+    border-radius: 50%;
+    color: var(--bs-primary);
+}
+
+.min-width-0 {
+    min-width: 0;
+}
+
+.chat-time {
+    font-size: 0.75rem;
+}
+
+.community-message {
+    display: flex;
+    margin-bottom: 1rem;
+}
+
+.community-message.outgoing {
+    justify-content: flex-end;
+}
+
+.community-message.incoming {
+    justify-content: flex-start;
+}
+
+.community-message-bubble {
+    max-width: 75%;
+    padding: 10px 15px;
+    border-radius: 18px;
+    position: relative;
+}
+
+.message-outgoing {
+    background-color: var(--bs-primary);
+    color: white;
+    border-bottom-right-radius: 5px;
+}
+
+.message-incoming {
+    background-color: var(--bs-secondary-bg);
+    color: var(--bs-body-color);
+    border-bottom-left-radius: 5px;
+}
+
+.message-sender {
+    font-size: 0.8rem;
+    font-weight: bold;
+    margin-bottom: 3px;
+}
+
+.message-text {
+    word-wrap: break-word;
+}
+
 /* Media queries */
 @media (max-width: 767.98px) {
     .message-content {
@@ -305,5 +395,18 @@ main {
         width: 35px;
         height: 35px;
         font-size: 1.1rem;
+    }
+    
+    .chat-sidebar {
+        height: auto;
+        max-height: 50vh;
+    }
+    
+    .chat-content {
+        height: auto;
+    }
+    
+    .chat-messages {
+        height: 50vh !important;
     }
 }

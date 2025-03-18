@@ -62,6 +62,13 @@
                             <i class="bi bi-chat-dots"></i> {{ 'Agricultural Assistant' | translate(lang) }}
                         </a>
                     </li>
+                    {% if current_user.is_authenticated %}
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == url_for('community_chat') %}active{% endif %}" href="{{ url_for('community_chat') }}">
+                            <i class="bi bi-people"></i> {{ 'Community Chat' | translate(lang) }}
+                        </a>
+                    </li>
+                    {% endif %}
                 </ul>
                 
                 <div class="d-flex">
